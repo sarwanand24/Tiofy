@@ -7,17 +7,19 @@ import axios from 'axios';
 import Carousel, { Pagination } from 'react-native-snap-carousel';
 import { getAccessToken } from '../../utils/auth';
 import Loading from '../Loading';
+import socket from '../../utils/Socket';
 
 const { width, height } = Dimensions.get('window');
 
 const FoodDashboard = (props) => {
+
     const [carouselData, setCarouselData] = useState([]);
     const [activeSlide, setActiveSlide] = useState(0);
     const [placeName, setPlaceName] = useState('');
     const [query, setQuery] = useState('');
     const [foods, setFoods] = useState([]);
     const [restaurants, setRestaurants] = useState([]);
-    const [vegMode, setVegMode] = useState(false);
+    const [vegMode, setVegMode] = useState(false);//do this in frontend now
     const [city, setCity] = useState('');
     const [userName, setUserName] = useState('');
     const [offersData, setOffersData] = useState([]);
@@ -27,6 +29,7 @@ const FoodDashboard = (props) => {
     const [searchResults, setSearchResults] = useState([]);
     const [filteredRestaurants, setFilteredRestaurants] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [undeliveredOrders, setUndeliveredOrders] = useState([]);
 
     const secondRowRef = useRef(null);
     const scrollViewRef = useRef(null);
@@ -46,16 +49,17 @@ const FoodDashboard = (props) => {
                         const { latitude, longitude } = position.coords;
                         setUserLatitude(latitude);
                         setUserLongitude(longitude);
-                        const jwtToken = await getAccessToken();
-
+                        const jwtToken = await AsyncStorage.getItem('token');
                         try {
                             const response = await fetch(
                                 `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
                             );
                             const data = await response.json();
+                            console.log('data', data);  
                             const fullAddress = `${data.address.city}, ${data.address.state}, ${data.address.country}`;
-                            setPlaceName(data.display_name);
                             setCity(fullAddress);
+                            setPlaceName(data.display_name);
+                            await fetchRestaurants();
                         } catch (error) {
                             console.error('Error fetching place name:', error);
                         }
@@ -76,7 +80,7 @@ const FoodDashboard = (props) => {
                     (error) => {
                         console.log(error.code, error.message);
                     },
-                    { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 }
+                    { timeout: 5000, maximumAge: 100000000000 }
                 );
             } else {
                 console.log('Location permission is not granted');
@@ -89,6 +93,32 @@ const FoodDashboard = (props) => {
     useEffect(() => {
         checkLocationPermission();
     }, []);
+
+    const fetchRestaurants = async () => {
+        if (!city || userLatitude === 0 || userLongitude === 0) return;
+        try {
+            const response = await fetch(`https://trioserver.onrender.com/api/v1/users/getAllRestaurants/${city}?vegMode=${vegMode}`);
+            const data = await response.json();
+            setFoods(data.foods);
+            setRestaurants(data.restaurants);
+            setError(null);
+
+            if (data.restaurants.length > 0) {
+                setLoading(false)
+                await fetchRoute(data.restaurants);
+            }
+        } catch (error) {
+            console.error('Error fetching restaurants:', error);
+            setError('Failed to load restaurants.');
+            setLoading(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchRestaurants();
+    }, [city, vegMode]);
 
     useEffect(() => {
         const fetchUserName = async () => {
@@ -223,29 +253,6 @@ const FoodDashboard = (props) => {
         }
     }, [offersData]);
 
-    const fetchRestaurants = async () => {
-        if (!city || userLatitude === 0 || userLongitude === 0) return;
-
-        setLoading(true);
-        try {
-            const response = await fetch(`https://trioserver.onrender.com/api/v1/users/getAllRestaurants/${city}?vegMode=${vegMode}`);
-            const data = await response.json();
-            setFoods(data.foods);
-            setRestaurants(data.restaurants);
-            setError(null);
-
-            if (data.restaurants.length > 0) {
-                await fetchRoute(data.restaurants);
-            }
-        } catch (error) {
-            console.error('Error fetching restaurants:', error);
-            setError('Failed to load restaurants.');
-            setLoading(false);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const fetchRoute = async (restaurants) => {
         try {
             const updatedRestaurants = await Promise.all(restaurants.map(async (restaurant) => {
@@ -266,10 +273,6 @@ const FoodDashboard = (props) => {
             console.error('Error fetching routes:', error);
         }
     };
-
-    useEffect(() => {
-        fetchRestaurants();
-    }, [city, vegMode, userLatitude, userLongitude]);
 
     const renderRestaurants = ({ item, index }) => {
         const distanceInKm = (item.distance / 1000).toFixed(2);
@@ -308,6 +311,24 @@ const FoodDashboard = (props) => {
         );
     };
 
+    useEffect(() => {
+        const fetchUndeliveredOrders = async () => {
+            try {
+                const token = await AsyncStorage.getItem('token')
+                const response = await axios.get('https://trioserver.onrender.com/api/v1/foodyOrder/getUserUndeliveredOrders', {
+                    headers: {
+                        'Authorization': `Bearer ${token}` // Add the token to the Authorization header
+                      }
+                }); // Adjust the endpoint as needed
+                console.log('responseeoooo', response.data);
+                setUndeliveredOrders(response.data);
+            } catch (error) {
+                console.error('Error fetching undelivered orders:', error);
+            }
+        };
+
+        fetchUndeliveredOrders();
+    }, []);
 
     if (loading) {
         return <Loading />
@@ -321,7 +342,9 @@ const FoodDashboard = (props) => {
         <ScrollView style={styles.container}>
             <View style={styles.locationContainer}>
                 <Icon name="location" size={24} color="red" />
-                <Text style={styles.locationText}>{placeName ? placeName : "Fetching location..."}</Text>
+                <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+                    {placeName ? placeName : "Fetching location..."}
+                    </Text>
             </View>
 
             {/* Search Bar */}
@@ -451,6 +474,31 @@ const FoodDashboard = (props) => {
                             renderItem={renderRestaurants}
                         />
                     </View>
+
+                     {/* Undelivered Orders */}
+                     {undeliveredOrders.length > 0 && (
+  <View style={styles.orderBox}>
+    <ScrollView style={styles.ordersScrollView}>
+      {undeliveredOrders.map((order, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.orderItem}
+          onPress={() => {
+            props.navigation.push('MapDirection', {
+              orderId: order._id,
+              socket,
+              userId: order.orderedBy,
+            });
+          }}
+        >
+          <Text style={styles.orderText}>Your recent order is on the way</Text>
+          <Text style={styles.orderText}>Order ID: {order._id}</Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  </View>
+)}
+
                 </View>
             )}
         </ScrollView>
@@ -514,6 +562,7 @@ const styles = StyleSheet.create({
     foodName: {
         marginTop: 5,
         textAlign: 'center',
+        color: 'black'
     },
     offersContainer: {
         marginHorizontal: 20,
@@ -649,7 +698,33 @@ const styles = StyleSheet.create({
     icon: {
         marginRight: 5,
     },
-
+    orderBox: {
+        position: 'absolute',
+        top: height/1.9,               // Position the box 50 units from the bottom of the screen
+        left: 0,
+        right: 0,
+        padding: 10,              // Padding around the entire order box
+        backgroundColor: 'transparent', // Make the background transparent to see the light blue cards
+      },
+      ordersScrollView: {
+        paddingHorizontal: 10,    // Padding inside the scroll view for better alignment
+      },
+      orderItem: {
+        backgroundColor: '#ADD8E6', // Light blue background for the order item
+        borderRadius: 10,           // Rounded corners
+        padding: 15,                // Space inside each order box
+        marginBottom: 15,           // Space between each order box
+        shadowColor: '#000',        // Optional: Shadow for a slight elevation effect
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        elevation: 3,               // For Android shadow/elevation
+      },
+      orderText: {
+        fontSize: 16,        // Adjust font size for readability
+        color: '#FFFAFA',    // Snow-white text color
+        marginBottom: 5,     // Space between text lines
+      },
 });
 
 export default FoodDashboard;

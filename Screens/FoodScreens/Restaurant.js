@@ -12,7 +12,6 @@ function Restaurant(props) {
     const {restro} = props.route.params;
 
     console.log('Restroooo', restro);
-    
 
     const [query, setQuery] = useState('');
     const [cartBtn, setCartBtn] = useState(false);
@@ -73,11 +72,32 @@ function Restaurant(props) {
     }, [fetchveg, fetchnonveg])
 
     useEffect(() => {
-        setVeg(restro.vegFoods);
-        setfetchVeg(restro.vegFoods);
-        setNonVeg(restro.nonvegFoods);
-        setfetchNonVeg(restro.nonvegFoods)
-    }, [])
+        // Function to adjust price based on time
+        const adjustPriceBasedOnTime = async() => {
+
+            const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata');
+            const data = await response.json();
+            const currentHour = new Date(data.datetime).getHours();
+            // Example time-based pricing logic
+            const isDiscountTime = currentHour >= 0 && currentHour <= 6; // Discount from 12 AM to 6 AM
+            
+                const updatedVeg = restro.vegFoods.map(food => ({
+                    ...food,
+                    tiofyPrice: isDiscountTime ? food.tiofyPrice * 1.5 : food.tiofyPrice,
+                }));
+                setVeg(updatedVeg);
+                setfetchVeg(updatedVeg);
+            
+                const updatedNonVeg = restro.nonvegFoods.map(food => ({
+                    ...food,
+                    tiofyPrice: isDiscountTime ? food.tiofyPrice * 1.5 : food.tiofyPrice,
+                }));
+                setNonVeg(updatedNonVeg);
+                setfetchNonVeg(updatedNonVeg) 
+        };
+        // Initial check and adjustment
+        adjustPriceBasedOnTime();
+    }, []);    
 
     const VegincrementCounter = (id) => {
         const index = veg.findIndex(food => food._id === id);
@@ -296,6 +316,26 @@ function Restaurant(props) {
         );
     }
 
+    const storeCartData = async () => {
+        const cartData = {
+          restroName: restro.restaurantName,
+          totalAmount,
+          totalItem,
+          selectedFoods,
+          restroId: restro._id,
+          deviceToken: restro.deviceToken,
+          totalRestroAmount,
+          distance: distanceInKm
+        };
+    
+        try {
+          await AsyncStorage.setItem('cartData', JSON.stringify(cartData));
+          props.navigation.push("FoodCart", cartData);
+        } catch (error) {
+          console.error('Error storing cart data:', error);
+        }
+      };
+
     return (
         <View>
 
@@ -332,9 +372,7 @@ function Restaurant(props) {
             {cartBtn && (
                 <TouchableOpacity
                     style={[styles.cartBtn, { position: 'absolute', zIndex: 100, top: height / 1.2 }]}
-                    onPress={() => {
-                        props.navigation.push("FoodCart", { restroName: restro.restaurantName, totalAmount, totalItem, selectedFoods, restroId: restro._id, deviceToken: restro.deviceToken, totalRestroAmount, distance: distanceInKm})
-                    }}>
+                    onPress={storeCartData}>
                     <Text style={{ color: 'black', fontWeight: '700', fontSize: 16 }}>{totalItem} Items added</Text>
                     <Text style={{ color: 'black', fontWeight: '700', fontSize: 16 }}>View Cart
                         <Icon name="arrow-right" size={15} color="black" />

@@ -5,6 +5,8 @@ import ErrorPopup from '../ErrorPopup';
 import auth from '@react-native-firebase/auth';
 import Icon from "react-native-vector-icons/FontAwesome6";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 GoogleSignin.configure({
   webClientId: '579774610265-3bk1mgraq768pcdtip2p90oiiidre8fo.apps.googleusercontent.com',
@@ -65,23 +67,21 @@ function RegisterType(props) {
     async function onGoogleButtonPress() {
       try {
         // Check if your device supports Google Play
+        
         await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
         
         // Get the user's ID token
         const { idToken } = await GoogleSignin.signIn();
-        
-        // Create a Google credential with the token
         const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-        
-        // Sign-in the user with the credential
+        setloading(true)
         const userCredential = await auth().signInWithCredential(googleCredential);
-        
         // Get the user details from the signed-in user
         const { user } = userCredential;
         
         // Access user details
       // Check if phone number is missing and update the state
       if (!user.phoneNumber) {
+        setloading(false)
         setUserDetails({
           uid: user.uid,
           name: user.displayName,
@@ -102,113 +102,112 @@ function RegisterType(props) {
         setUserDetails(details);
         console.log('User details:', details);
         // Save to database or proceed as necessary
-        const formData = new FormData();
-        formData.append('profileImg', userDetails.photoURL,);
-        formData.append("fullName", userDetails.name);
         const namePart = userDetails.name.replace(/\s+/g, '').toLowerCase();
         // Generate a random number or string for uniqueness
         const randomPart = Math.floor(Math.random() * 10000); // Example: a number between 0-9999
         // Combine the name part with the random part
         const username = `${namePart}${randomPart}`;
-        formData.append("username", username);
-        formData.append("email", userDetails.email);
-        formData.append("password", userDetails.uid);
-        formData.append("mobileNo", userDetails.phoneNumber);
-        console.log(formData);
-        setloading(true)
-       
-          await fetch("https://trioserver.onrender.com/api/v1/users/register", {
-            method: "POST",
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            },
-            body: formData
-        })
-            .then(res => res.json())
-            .then(async (data) => {
-                console.log(data);
-                try {
-                    console.log(data.data.accessToken);
-                    if (data.data.accessToken) {
-                        setloading(false);
-                        await AsyncStorage.setItem("token", data.data.accessToken);
-                        await AsyncStorage.setItem("Userdata", JSON.stringify(data.data.user));
-                        props.navigation.pop();
-                        props.navigation.replace("MainApp");
-                    }
-                    else {
-                        setloading(false);
-                        setErrorMessage(data.data);
-                        setErrorVisible(true);
-                    }
-                } catch (error) {
-                    setloading(false);
-                    console.log("Error in SignUp", error);
-                    setErrorMessage(error);
-                    setErrorVisible(true);//Show the proper error with the help of message and received and use some code eg. 101 to identify the error          
-             } 
-            })
+        
+        // Create a JSON object with the data
+        const jsonData = {
+            profileImg: userDetails.photoURL,
+            fullName: userDetails.name,
+            username: username,
+            email: userDetails.email,
+            password: userDetails.uid,
+            mobileNo: userDetails.phoneNumber,
+        };
+        
+        console.log(jsonData);
+        
+        try {
+            const response = await axios.post("https://trioserver.onrender.com/api/v1/users/google-register", jsonData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            console.log('Response:', response.data);
+            if (data.data.accessToken) {
+              await AsyncStorage.setItem("token", data.data.accessToken);
+              await AsyncStorage.setItem("Userdata", JSON.stringify(data.data.user));
+              setloading(false)
+              props.navigation.replace("MainApp");
+          } else {
+            setloading(false)
+              setErrorMessage(data.data);
+              setErrorVisible(true);
+          }
+        } catch (error) {
+            console.error('Error:', error.response ? error.response.data : error.message);
+        }
         }
       } catch (error) {
+        setloading(false)
         console.error('Google Sign-In Error:', error);
         // Handle error, show an error message to the user if necessary
+      } finally{
+        setloading(false)
       }
     }
 
       // Handle the phone number submission
-  const handlePhoneNumberSubmit = async() => {
-    const updatedUserDetails = { ...userDetails, phoneNumber };
-    setUserDetails(updatedUserDetails);
-    setIsModalVisible(false);
-    console.log('User details with phone number:', updatedUserDetails);
-    // Save to database or proceed as necessary
-    const formData = new FormData();
-    formData.append('profileImg', userDetails.photoURL,);
-    formData.append("fullName", userDetails.name);
-    const namePart = userDetails.name.replace(/\s+/g, '').toLowerCase();
-    // Generate a random number or string for uniqueness
-    const randomPart = Math.floor(Math.random() * 10000); // Example: a number between 0-9999
-    // Combine the name part with the random part
-    const username = `${namePart}${randomPart}`;
-    formData.append("username", username);
-    formData.append("email", userDetails.email);
-    formData.append("password", userDetails.uid);
-    formData.append("mobileNo", userDetails.phoneNumber);
-    console.log(formData);
-    setloading(true)
-   
-      await fetch("https://trioserver.onrender.com/api/v1/users/register", {
-        method: "POST",
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        },
-        body: formData
-    })
-        .then(res => res.json())
-        .then(async (data) => {
-            console.log(data);
-            try {
-                console.log(data.data.accessToken);
-                if (data.data.accessToken) {
-                    setloading(false);
-                    await AsyncStorage.setItem("token", data.data.accessToken);
-                    await AsyncStorage.setItem("Userdata", JSON.stringify(data.data.user));
-                    props.navigation.pop();
-                    props.navigation.replace("MainApp");
-                }
-                else {
-                    setloading(false);
-                    setErrorMessage(data.data);
-                    setErrorVisible(true);
-                }
-            } catch (error) {
-                setloading(false);
-                console.log("Error in SignUp", error);
-                setErrorMessage(error);
-                setErrorVisible(true);//Show the proper error with the help of message and received and use some code eg. 101 to identify the error          
-         } 
-        })
-  };
+      const handlePhoneNumberSubmit = async() => {
+        // Create a new object with updated phone number
+        const updatedUserDetails = { ...userDetails, phoneNumber };
+      
+        // Update the user details state and wait for it to complete
+        setUserDetails(updatedUserDetails);
+      
+        // Use a callback to ensure the state update has occurred
+        setUserDetails(async(prevDetails) => {
+          const updatedDetails = { ...prevDetails, phoneNumber };
+          console.log('User details with phone number:', updatedDetails);
+      
+          // Prepare FormData
+          const namePart = userDetails.name.replace(/\s+/g, '').toLowerCase();
+          // Generate a random number or string for uniqueness
+          const randomPart = Math.floor(Math.random() * 10000); // Example: a number between 0-9999
+          // Combine the name part with the random part
+          const username = `${namePart}${randomPart}`;
+          
+          // Create a JSON object with the data
+          const jsonData = {
+              profileImg: userDetails.photoURL,
+              fullName: userDetails.name,
+              username: username,
+              email: userDetails.email,
+              password: userDetails.uid,
+              mobileNo: updatedDetails.phoneNumber,
+          };
+          
+          console.log(jsonData);
+          
+          try {
+            setloading(true)
+              const response = await axios.post("https://trioserver.onrender.com/api/v1/users/google-register", jsonData, {
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+              });
+              console.log('Response:', response.data);
+              const data = response.data;
+              console.log(data);
+      
+              if (data.data.refreshToken) {
+                  await AsyncStorage.setItem("token", data.data.refreshToken);
+                  await AsyncStorage.setItem("Userdata", JSON.stringify(data.data.user));
+                  setloading(false)
+                  props.navigation.replace("MainApp");
+              } else {
+                  setloading(false)
+                  setErrorMessage(data.data);
+                  setErrorVisible(true);
+              }
+          } catch (error) {
+              console.error('Error:', error.response ? error.response.data : error.message);
+          }
+        });
+      };      
 
     if (loading) {
       return (
@@ -252,7 +251,7 @@ function RegisterType(props) {
       <Text style={styles.buttonText}>Sign in with Google</Text>
     </TouchableOpacity>
 
-           <TouchableOpacity onPress={()=>{props.navigation.replace("TiofyDashboard")}}>
+           <TouchableOpacity onPress={()=>{props.navigation.replace("MainApp")}}>
             <Text style={{color: 'grey', fontSize:20, textAlign: 'center', marginTop: 20}}>Skip</Text>
             </TouchableOpacity>
             <Modal visible={isModalVisible} transparent={true} animationType="slide">
@@ -354,6 +353,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 20,
+        color: 'black'
       },
       textInput: {
         width: '100%',

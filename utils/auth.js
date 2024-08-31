@@ -20,9 +20,9 @@ export const refreshToken = async () => {
     const response = await axios.post('https://trioserver.onrender.com/api/v1/users/refresh-token', {
       refreshToken,
     });
-    console.log(response.data.data.accessToken);
-    await AsyncStorage.setItem('token', response.data.data.accessToken);
-    return response.data.data.accessToken;
+    console.log(response.data.data.refreshToken);
+    await AsyncStorage.setItem('token', response.data.data.refreshToken);
+    return response.data.data.refreshToken;
   } catch (error) {
     console.error('Failed to refresh token', error);
     // Handle error (e.g., redirect to login)

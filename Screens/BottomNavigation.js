@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
 import { BottomNavigation, Text } from 'react-native-paper';
 import TiofyDashboard from './TiofyDashboard'; // Assuming this is the component we are working on
+import OrderHistory from './OrderHistory';
+import Cart from './Cart';
 
-const Orders = () => <Text>Orders</Text>;
-const Cart = () => <Text>Cart</Text>;
 const Account = () => <Text>Account</Text>;
 
 const MainApp = (props) => {
   const [index, setIndex] = useState(0);
   const [routes] = useState([
     { key: 'home', title: 'Home', focusedIcon: 'home', unfocusedIcon: 'home-outline' },
-    { key: 'orders', title: 'Orders', focusedIcon: 'list', unfocusedIcon: 'list-outline' },
+    { key: 'orders', title: 'Orders', focusedIcon: 'clipboard-text-outline', unfocusedIcon: 'clipboard-text' },
     { key: 'cart', title: 'Cart', focusedIcon: 'cart', unfocusedIcon: 'cart-outline' },
-    { key: 'account', title: 'Account', focusedIcon: 'contact', unfocusedIcon: 'user-outline' },
+    { key: 'account', title: 'Account', focusedIcon: 'account', unfocusedIcon: 'account-circle-outline' },
   ]);
 
   const renderScene = BottomNavigation.SceneMap({
     home: () => <TiofyDashboard {...props} />,
-    orders: () => <Orders {...props} />,
+    orders: () => <OrderHistory {...props} />,
     cart: () => <Cart {...props} />,
     account: () => <Account {...props} />,
   });
@@ -27,8 +27,8 @@ const MainApp = (props) => {
       navigationState={{ index, routes }}
       onIndexChange={setIndex}
       renderScene={renderScene}
-      barStyle={{ backgroundColor: '#6299FF' }}
-      activeColor='pink'
+      barStyle={{ backgroundColor: 'blue' }}
+      activeColor='lightpink'
       inactiveColor='white'
     />
   );

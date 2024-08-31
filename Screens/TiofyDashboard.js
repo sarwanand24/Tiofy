@@ -29,11 +29,10 @@ const TiofyDashboard = (props) => {
   async function saveTokenToDatabase(token) {
     const jwtToken = await getAccessToken();
     console.log('jwt log', jwtToken);
-
     await fetch("https://trioserver.onrender.com/api/v1/users/set-device-token", {
       method: "POST",
       headers: new Headers({
-        Authorization: "Bearer " + jwtToken,
+        Authorization: `Bearer ${jwtToken}`,
         "Content-Type": "application/json"
       }),
       body: JSON.stringify({
@@ -178,18 +177,18 @@ const TiofyDashboard = (props) => {
             style={styles.logo}
           />
           <TouchableOpacity onPress={() => drawer.current.openDrawer()}>
-            <Icon name="menu" size={30} color="#0044FF" />
+            <Icon name="menu" size={30} color="green" />
           </TouchableOpacity>
         </View>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Search Bar */}
           <View style={styles.searchBar}>
-            <Icon name="search" size={24} color="#888888" />
             <TextInput
               placeholder="Search Here"
               style={styles.searchInput}
             />
+            <Icon name="search" size={24} style={styles.searchIcon} />
           </View>
 
           {/* Slideshow Banner */}
@@ -314,20 +313,32 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F0F0',
-    borderRadius: 8,
-    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
     paddingHorizontal: 10,
-  },
-  searchInput: {
+    marginTop: 20,
+    width: '90%',
+    marginLeft: '5%',
+    borderColor: 'blue',
+    borderWidth: 2
+},
+searchInput: {
     flex: 1,
-    padding: 10,
     fontSize: 16,
-  },
+    paddingVertical: 8,
+    paddingLeft: 10, // Add padding to the left to avoid text being too close to the edge
+    color: 'black',
+},
+searchIcon: {
+    padding: 5,
+    backgroundColor: 'blue',
+    color: "white",
+    borderRadius: 20,
+},
   categoriesTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0044FF',
+    color: 'black',
     marginLeft: 20,
     marginVertical: 10,
   },
@@ -365,8 +376,6 @@ const styles = StyleSheet.create({
   carouselImage: {
     width: '100%',
     height: '100%',
-    borderBottomLeftRadius: 50, // Curved cutting style
-    borderBottomRightRadius: 50, // Curved cutting style
   },
   carouselTextContainer: {
     position: 'absolute',

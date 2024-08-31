@@ -27,9 +27,6 @@ function Login(props) {
     console.log("User", user);
     if (user) {
       console.log('Success Login');
-      await AsyncStorage.setItem("token", token);
-      await AsyncStorage.setItem("Userdata", JSON.stringify(Userdata.user));
-      props.navigation.replace('MainApp');
     }
   }
 
@@ -54,6 +51,9 @@ function Login(props) {
       setLoading(true);
       console.log(code);
       await confirm.confirm(code);
+      await AsyncStorage.setItem("token", token);
+      await AsyncStorage.setItem("Userdata", JSON.stringify(Userdata.user));
+      props.navigation.replace('MainApp');
     } catch (error) {
       console.log('Invalid code.');
       setErrorMessage('Invalid code.');

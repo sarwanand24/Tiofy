@@ -32,9 +32,9 @@ function FoodCart(props) {
     const [cod, setCod] = useState(false);
     const [restroRejected, setRestroRejected] = useState(false);
     const [restroAccepted, setRestroAccepted] = useState(false);
-    const [riderAccepted, setRiderAccepted] = useState(false);
     const [loading, setLoading] = useState(false)
-    const [noRiderFound, setNoRiderFound] = useState(false)
+    const [deliveryFee, setDeliveryFee] = useState(distance*10.5);
+    const [platformFee, setPlatformFee] = useState(5)
 
     console.log("New Selected Foods", newSelectedFoods);
     console.log("New Total Amount", newTotalAmount);
@@ -233,6 +233,20 @@ function FoodCart(props) {
     //     alert('Success', 'The payment was confirmed successfully.');
     // };
 
+    useEffect(async() => {
+        const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata');
+        const data = await response.json();
+        const currentHour = new Date(data.datetime).getHours();
+        const isDiscountTime = currentHour >= 0 && currentHour <= 6; // Checking if the time is between 12 AM and 6 AM
+        let fee = distance * 10.5;
+
+        if (isDiscountTime) {
+            fee *= 2; // Double the delivery fee if the time is between 12 AM and 6 AM
+        }
+
+        setDeliveryFee(fee); // Update the state with the calculated delivery fee
+    }, [distance]);
+
     const codOrderConfirm = async () => {
         setLoading(true);
         console.log("Tapped", socket);
@@ -243,7 +257,9 @@ function FoodCart(props) {
         console.log("Userdata", Userdata);
         console.log("UserdataAddress", Userdata.address, Userdata._id);
         console.log("SocketId", socket.id);
-        socket.emit("FoodyOrderPlaced", { restroId, deviceToken, newSelectedFoods, newTotalItem, newTotalAmount: newTotalAmount+(distance*12.5), newTotalRestroAmount, userDeviceToken, socketId: socket.id, userAddress: Userdata.address, userId: Userdata._id })
+        const otp = Math.floor(1000 + Math.random() * 9000);
+        console.log(`Generated OTP: ${otp}`);
+        socket.emit("FoodyOrderPlaced", { restroId, deviceToken, newSelectedFoods, newTotalItem, newTotalAmount: newTotalAmount + deliveryFee + tipAmount + platformFee, riderEarning: deliveryFee + tipAmount, newTotalRestroAmount, userDeviceToken, socketId: socket.id, userAddress: Userdata.address || '', userId: Userdata._id, otp })
     }
 
     socket.on("OrderRejectedbyRestaurant", async (data) => {
@@ -284,9 +300,11 @@ function FoodCart(props) {
         setLoading(false);
         const StringUserdata = await AsyncStorage.getItem("Userdata")
         const Userdata = JSON.parse(StringUserdata);
-        if (data.userId === Userdata._id) {
+        if (data.data.userId === Userdata._id) {
+            setRestroAccepted(true)
             console.log(data);
-            setRestroAccepted(true);
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            props.navigation.push("MapDirection", { orderId: data.orderId, socket, userId: Userdata._id })
         }
     })
 
@@ -294,7 +312,7 @@ function FoodCart(props) {
         return (
             <View style={styles.container3}>
                 <Text style={styles.mainMessage}>
-                    Your Order Is Getting Prepared In The Restaurant
+                    Order Accepted
                 </Text>
                 <Text style={styles.subMessage}>
                     Searching For Your Delivery Partner
@@ -309,66 +327,7 @@ function FoodCart(props) {
         );
     }
 
-    socket.on("NoRidersFound", async (data) => {
-        //when data.userId equals this users id then only execute next lines
-        setLoading(false);
-        const StringUserdata = await AsyncStorage.getItem("Userdata")
-        const Userdata = JSON.parse(StringUserdata);
-        if (data.userId === Userdata._id) {
-            console.log(data);
-            setNoRiderFound(true);
-        }
-    })
-
-    if (noRiderFound) {
-        return (
-            <View style={styles.restroContainer}>
-                <Text style={styles.messageText}>
-                    No Riders Available at the moment
-                </Text>
-                <Text style={styles.subMessageText}>
-                    Order after a while
-                </Text>
-                <LottieView
-                    source={require('../../assets/Animations/RestroRejected.json')}
-                    style={styles.lottie}
-                    autoPlay
-                    loop
-                />
-                <TouchableOpacity style={styles.resbutton} onPress={() => { props.navigation.pop(2) }}>
-                    <Text style={styles.resbuttonText}>Go Back!</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
-
-    socket.on("OrderAcceptedbyRider", async (data) => {
-        //when data.userId equals this users id then only execute next lines
-        const StringUserdata = await AsyncStorage.getItem("Userdata")
-        const Userdata = JSON.parse(StringUserdata);
-        if (data.data.userId === Userdata._id) {
-            console.log(data);
-            setRestroAccepted(false);
-            setRiderAccepted(true);
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            const orderId = data.orderId;
-            console.log("Order Id", orderId);
-            props.navigation.push("MapDirection", { orderId, socket, userId: Userdata._id, riderId: data.riderId })
-        }
-    })
-
-    if (riderAccepted) {
-        return (
-            <View>
-                <Image
-                    source={require("../../assets/riderImg.jpeg")}
-                    style={{ width: width, height }}
-                />
-            </View>
-        );
-    }
-
-    if(loading){
+    if (loading) {
         return <Loading />
     }
 
@@ -532,7 +491,7 @@ function FoodCart(props) {
                     </View>
                     <View style={styles.bill}>
                         <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Delivery fee</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {distance*12.5}</Text>
+                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {deliveryFee}</Text>
                     </View>
                     <View style={{ borderBottomWidth: 1, borderBottomColor: 'black', marginTop: 10 }} />
                     <View style={styles.bill}>
@@ -541,7 +500,7 @@ function FoodCart(props) {
                     </View>
                     <View style={styles.bill}>
                         <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Platform fee</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs 3</Text>
+                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {platformFee}</Text>
                     </View>
                     <View style={styles.bill}>
                         <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>GST & Restaurant Charges</Text>
@@ -550,7 +509,7 @@ function FoodCart(props) {
                     <View style={{ borderBottomWidth: 1, borderBottomColor: 'black', marginTop: 10 }} />
                     <View style={styles.bill}>
                         <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>To Pay</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {newTotalAmount + tipAmount + (distance*12.5)}</Text>
+                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {newTotalAmount + tipAmount + deliveryFee + platformFee}</Text>
                     </View>
                 </View>
             </View>
@@ -558,7 +517,7 @@ function FoodCart(props) {
             <View style={{ justifyContent: 'center', alignItems: 'center' }}>
                 <View style={{ marginVertical: 3, width: '80%', alignItems: 'center' }}>
                     <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)} style={{ alignItems: 'center' }}>
-                        <Text style={{ fontWeight: 'bold', fontSize: 20 }}>Cancellation Policy</Text>
+                        <Text style={{ fontWeight: 'bold', fontSize: 20, color: '#A9A9A9' }}>Cancellation Policy</Text>
                     </TouchableOpacity>
                     {isExpanded && (
                         <View style={{ marginTop: 10 }}>
@@ -620,7 +579,7 @@ function FoodCart(props) {
 
             <View style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: 'lightblue' }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 }}>
-                    <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Pay Rs {newTotalAmount + tipAmount}</Text>
+                    <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Pay Rs {newTotalAmount + tipAmount + deliveryFee + platformFee}</Text>
                     {cod && (
                         <TouchableOpacity
                             onPress={codOrderConfirm}
