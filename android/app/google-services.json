@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "579774610265",
+    "project_id": "tiofy-2024",
+    "storage_bucket": "tiofy-2024.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:579774610265:android:ec727a3f741d0b15196a48",
+        "android_client_info": {
+          "package_name": "com.tiofy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "579774610265-hpg3so81s0kn95iljmmj3camopqb5c5m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tiofy",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "579774610265-3bk1mgraq768pcdtip2p90oiiidre8fo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDH73qpsBozNolCjNDfyFOrwx8vAUvaB7k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "579774610265-3bk1mgraq768pcdtip2p90oiiidre8fo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+
