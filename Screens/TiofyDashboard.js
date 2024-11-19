@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, Image, TouchableOpacity, DrawerLayoutAndroid, TextInput, ScrollView, Dimensions, StyleSheet,
+  View, Text, Image, TouchableOpacity, TextInput, ScrollView, Dimensions, StyleSheet,
   PermissionsAndroid
 } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
@@ -17,7 +17,7 @@ const { width } = Dimensions.get('window');
 
 const TiofyDashboard = (props) => {
 
-  const drawer = useRef(null);
+  const [greeting, setGreeting] = useState('');
   const [carouselData, setCarouselData] = useState([]);
   const [activeSlide, setActiveSlide] = useState(0);
   const [offersData, setOffersData] = useState([]);
@@ -26,6 +26,28 @@ const TiofyDashboard = (props) => {
 
   const scrollViewRef = useRef(null);
   const scrollIntervalRef = useRef(null);
+
+  useEffect(() => {
+    const updateGreeting = () => {
+      const hour = new Date().getHours();
+      if (hour < 12) {
+        setGreeting('Good Morning');
+      } else if (hour < 18) {
+        setGreeting('Good Afternoon');
+      } else if (hour < 21) {
+        setGreeting('Good Evening');
+      } else {
+        setGreeting('Good Night');
+      }
+    };
+
+    updateGreeting();
+
+    // Optionally, update greeting every hour
+    const intervalId = setInterval(updateGreeting, 3600000); // 1 hour
+
+    return () => clearInterval(intervalId); // cleanup on unmount
+  }, []);
 
   async function saveTokenToDatabase(token) {
     const jwtToken = await getAccessToken();
@@ -107,19 +129,6 @@ useEffect(() => {
     locationPermission()
   }, [])
 
-  const renderDrawerContent = () => (
-    <View style={styles.drawerContainer}>
-      <TouchableOpacity style={styles.drawerItem}>
-        <Icon name="person-outline" size={24} color="#FFFFFF" />
-        <Text style={styles.drawerText}>Profile</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.drawerItem}>
-        <Icon name="list-outline" size={24} color="#FFFFFF" />
-        <Text style={styles.drawerText}>Order History</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
   useEffect(() => {
     // Fetch carousel data from server
     const fetchCarouselData = async () => {
@@ -186,25 +195,18 @@ useEffect(() => {
   }, [offersData]);
 
   return (
-    <DrawerLayoutAndroid
-      ref={drawer}
-      drawerWidth={300}
-      drawerPosition="right"
-      renderNavigationView={renderDrawerContent}
-    >
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        {/* Header with Logo and Menu */}
+        <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
+          {/* Header with Logo and Menu */}
         <View style={styles.header}>
           <Image
             source={require('../assets/Logo/tiofydashboard.png')} // replace with your logo image
             style={styles.logo}
           />
-          <TouchableOpacity onPress={() => drawer.current.openDrawer()}>
-            <Icon name="menu" size={30} color="green" />
-          </TouchableOpacity>
+          <View style={styles.greetContainer}>
+      <Text style={styles.greetingText}>{greeting}</Text>
+    </View>
         </View>
-
-        <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Search Bar */}
           <View style={styles.searchBar}>
             <TextInput
@@ -241,7 +243,9 @@ useEffect(() => {
           {/* Categories */}
           <Text style={styles.categoriesTitle}>Our Categories</Text>
 
-          <View style={styles.categoriesContainer}>
+          <ScrollView 
+          horizontal
+          style={styles.categoriesContainer}>
             <TouchableOpacity style={styles.categoryItem} onPress={() => { props.navigation.push('FoodDashboard') }}>
                <Image 
     source={require('../assets/Food.png')} // Replace with your image path
@@ -249,7 +253,7 @@ useEffect(() => {
   />
               <Text style={styles.categoryText}>Food</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryItem}>
+            <TouchableOpacity style={styles.categoryItem} onPress={() => {props.navigation.push('HotelDashboard')}}>
                 <Image 
     source={require('../assets/Hotel.png')} // Replace with your image path
     style={styles.categoryImage}
@@ -268,16 +272,16 @@ useEffect(() => {
     source={require('../assets/Saloon.png')} // Replace with your image path
     style={styles.categoryImage}
   />
-              <Text style={styles.categoryText}>Saloon</Text>
+              <Text style={styles.categoryText}>Laundry</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.categoryItem}>
             <Image 
     source={require('../assets/vegetable.png')} // Replace with your image path
     style={styles.categoryImage}
   />
-              <Text style={styles.categoryText}>Fresh Green</Text>
+              <Text style={styles.categoryText}>Liquor</Text>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
 
           {/* Discounts & Offers */}
           {
@@ -318,31 +322,15 @@ useEffect(() => {
           onClose={() => setErrorVisible(false)}
         />
       </View>
-    </DrawerLayoutAndroid>
   );
 };
 
 const styles = StyleSheet.create({
-  drawerContainer: {
-    flex: 1,
-    backgroundColor: '#0044FF',
-    padding: 16,
-  },
-  drawerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  drawerText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    marginLeft: 10, // Add some space between the icon and text
-  },
-  header: {
+ header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 5,
   },
   logo: {
     width: 50,
@@ -351,13 +339,13 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#5ecdf9',
     borderRadius: 20,
     paddingHorizontal: 10,
-    marginTop: 20,
+    marginTop: 10,
     width: '90%',
     marginLeft: '5%',
-    borderColor: 'blue',
+    borderColor: '#5ecdf9',
     borderWidth: 2
 },
 searchInput: {
@@ -365,11 +353,11 @@ searchInput: {
     fontSize: 16,
     paddingVertical: 8,
     paddingLeft: 10, // Add padding to the left to avoid text being too close to the edge
-    color: 'black',
+    color: 'white',
 },
 searchIcon: {
     padding: 5,
-    backgroundColor: 'blue',
+    backgroundColor: '#5ecdf9',
     color: "white",
     borderRadius: 20,
 },
@@ -382,24 +370,27 @@ searchIcon: {
   },
   categoriesContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
+    flexWrap: 'nowrap',
     marginHorizontal: 20,
     marginBottom: 15,
   },
   categoryItem: {
-    width: 70, // Fixed width for each item
+    width: 90, // Fixed width for each item
     alignItems: 'center',
     margin: 5,  // Space around each item
+    borderWidth: 2,
+    borderRadius: 15,
+    borderColor: '#5ecdf9',
   },
    categoryImage: {
     width: 70, 
-    height: 70, 
+    height: 90, 
     borderRadius: 50,
   },
   categoryText: {
     marginTop: 5,
-    color: '#0044FF',
+    color: 'black',
+    fontWeight: 'bold'
   },
   bottomNavigation: {
     position: 'absolute',
@@ -436,7 +427,7 @@ searchIcon: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#0044FF',
+    backgroundColor: '#5ecdf9',
   },
   inactiveDotStyle: {
     backgroundColor: '#C4C4C4',
@@ -456,9 +447,9 @@ searchIcon: {
   },
   offerItem: {
     marginRight: 20,
-    borderRadius: 20,
+    borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#5ecdf9',
     padding: 5,
   },
   offerImage: {
@@ -468,8 +459,17 @@ searchIcon: {
   },
   offerText: {
     textAlign: 'center',
-    color: '#0044FF',
+    color: 'white',
     marginTop: 5,
+  },
+  greetContainer: {
+    padding: 10
+  },
+  greetingText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'crimson',
+    
   },
 });
 

@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   detailsBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'lightblue',
+    backgroundColor: '#5ecdf9',
     padding: 10,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20

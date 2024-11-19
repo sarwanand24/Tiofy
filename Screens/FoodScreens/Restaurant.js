@@ -403,7 +403,7 @@ function Restaurant(props) {
 
                 <View style={styles.menu}>
                     <TouchableOpacity
-                        style={[styles.menuBtn, activeVeg ? { backgroundColor: 'lightgreen' } : { backgroundColor: 'lightblue' }]}
+                        style={[styles.menuBtn, activeVeg ? { backgroundColor: 'lightgreen' } : { backgroundColor: '#5ecdf9' }]}
                         onPress={() => {
                             setActiveVeg(true);
                             setActiveNonVeg(false);
@@ -411,7 +411,7 @@ function Restaurant(props) {
                         <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Veg</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.menuBtn, activeNonVeg ? { backgroundColor: 'lightgreen' } : { backgroundColor: 'lightblue' }]}
+                        style={[styles.menuBtn, activeNonVeg ? { backgroundColor: 'lightgreen' } : { backgroundColor: '#5ecdf9' }]}
                         onPress={() => {
                             setActiveNonVeg(true);
                             setActiveVeg(false);
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-evenly',
         alignItems: 'center',
-        backgroundColor: 'lightblue',
+        backgroundColor: '#5ecdf9',
         borderRadius: 13,
         width: width / 2.5,
         position: 'absolute',
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: 'lightblue',
+        backgroundColor: '#5ecdf9',
         borderRadius: 20,
         padding: 15,
         width: width / 1.3,

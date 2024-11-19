@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Dimensions, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import auth from '@react-native-firebase/auth';
+import { Button, Dimensions, Image, ScrollView, StyleSheet, Text,
+   TextInput, TouchableOpacity, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Loading from '../Loading';
 import ErrorPopup from '../ErrorPopup';
@@ -9,51 +9,31 @@ const { width, height } = Dimensions.get('window');
 
 function Login(props) {
   // If null, no SMS has been sent
-  const { token, mobileNo, Userdata } = props.route.params;
+  const { token, email, Userdata, otp } = props.route.params;
   console.log("Userdata", Userdata.user);
 
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  const [confirm, setConfirm] = useState(null);
 
   const [loading, setLoading] = useState(false);
 
   // verification code (OTP - One-Time-Passcode)
   const [code, setCode] = useState('');
 
-  // Handle login
-  async function onAuthStateChanged(user) {
-    console.log("User", user);
-    if (user) {
-      console.log('Success Login');
-    }
-  }
-
-  useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
-    return subscriber; // unsubscribe on unmount
-  }, []);
-
-  useEffect(() => {
-    console.log("+91 " + mobileNo);
-    signInWithPhoneNumber("+91 " + mobileNo);
-  }, [])
-
-  // Handle the button press
-  async function signInWithPhoneNumber(phoneNumber) {
-    const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
-    setConfirm(confirmation);
-  }
-
   async function confirmCode() {
     try {
       setLoading(true);
       console.log(code);
-      await confirm.confirm(code);
-      await AsyncStorage.setItem("token", token);
-      await AsyncStorage.setItem("Userdata", JSON.stringify(Userdata.user));
-      props.navigation.replace('MainApp');
+      if (otp == code){
+        await AsyncStorage.setItem("token", token);
+        await AsyncStorage.setItem("Userdata", JSON.stringify(Userdata.user));
+        props.navigation.replace('MainApp');
+      }
+      else{
+        console.log("Wrong Otp");
+        setErrorMessage("Incorrect Otp");
+        setErrorVisible(true)
+      }
     } catch (error) {
       console.log('Invalid code.');
       setErrorMessage('Invalid code.');
@@ -76,6 +56,7 @@ function Login(props) {
   const handleKeyPress = (index, key) => {
     if (key === 'Backspace' && index > 0 && !inputs[index]) {
       inputRefs[index - 1].current.focus();
+      setCode('')
     }
   };
 

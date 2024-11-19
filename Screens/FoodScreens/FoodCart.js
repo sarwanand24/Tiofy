@@ -190,7 +190,7 @@ function FoodCart(props) {
                 contact: '7550894302',
                 name: 'Nikhil Dhamgay'
               },
-              theme: {color: 'lightblue'}
+              theme: {color: '#5ecdf9'}
             }
             RazorpayCheckout.open(options).then((data) => {
               const paymentData = {
@@ -442,7 +442,7 @@ function FoodCart(props) {
 
             <View style={{ paddingLeft: 20, paddingRight: 20, paddingBottom: 20 }}>
                 <Text style={{ color: 'black', fontSize: 20, fontWeight: '700' }}>Tip Your Delivery Partner</Text>
-                <View style={{ backgroundColor: 'lightblue', width: '100%', padding: 20, borderRadius: 20, marginTop: 10 }}>
+                <View style={{ backgroundColor: '#5ecdf9', width: '100%', padding: 20, borderRadius: 20, marginTop: 10 }}>
                     <Text style={{ color: 'black', fontSize: 12, textAlign: 'center' }}>Thank Your Delivery Partner by leaving them a tip</Text>
                     <View style={styles.instruc}>
                         <TouchableOpacity
@@ -511,7 +511,7 @@ function FoodCart(props) {
 
             <View style={{ paddingLeft: 20, paddingRight: 20, paddingBottom: 20 }}>
                 <Text style={{ color: 'black', fontSize: 20, fontWeight: '700' }}>Bill Details</Text>
-                <View style={{ backgroundColor: 'lightblue', width: '100%', padding: 20, borderRadius: 20, marginTop: 10 }}>
+                <View style={{ backgroundColor: '#5ecdf9', width: '100%', padding: 20, borderRadius: 20, marginTop: 10 }}>
                     <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>
                         <Icon name="motorcycle" size={20} color="black" /> {`\u00A0`} {`\u00A0`}
                         {duration} mins to Home</Text>
@@ -580,7 +580,7 @@ function FoodCart(props) {
                 </TouchableOpacity>
             </View>
 
-            <View style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: 'lightblue' }}>
+            <View style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: '#5ecdf9' }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 }}>
                     <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Pay Rs {newTotalAmount + tipAmount + deliveryFee + platformFee}</Text>
                     {razorpay && (
@@ -606,7 +606,7 @@ function FoodCart(props) {
 
 const styles = StyleSheet.create({
     container1: {
-        backgroundColor: 'lightblue',
+        backgroundColor: '#5ecdf9',
         borderBottomLeftRadius: 20,
         borderBottomRightRadius: 20,
     },
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-evenly',
         alignItems: 'center',
-        backgroundColor: 'lightblue',
+        backgroundColor: '#5ecdf9',
         borderRadius: 13,
         width: width / 4.5,
     },
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
         marginTop: 20
     },
     box: {
-        backgroundColor: 'lightblue',
+        backgroundColor: '#5ecdf9',
         borderRadius: 20,
         padding: 15
     },
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-evenly',
         alignItems: 'center',
         marginTop: 2,
-        backgroundColor: 'lightblue',
+        backgroundColor: '#5ecdf9',
         padding: 20
     },
     restroContainer: {

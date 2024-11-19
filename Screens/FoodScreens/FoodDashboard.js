@@ -137,8 +137,8 @@ const FoodDashboard = (props) => {
     useEffect(() => {
         // Calculate the height based on the availability of weather data and image
         const baseHeight = 150; // Minimum height with search bar only
-        const weatherHeight = weatherData ? 80 : 0; // Height for weather data
-        const imageHeight = weatherData && weatherData.isRaining ? 120 : 0; // Height for image
+        const weatherHeight = weatherData ? 220 : 0; // Height for weather data
+        const imageHeight = weatherData && weatherData.isRaining ? 260 : 0; // Height for image
 
         // Update the header height based on the content
         setHeaderHeight(baseHeight + weatherHeight + imageHeight);
@@ -159,7 +159,7 @@ const FoodDashboard = (props) => {
 
     const headerBackgroundColor = scrollY.interpolate({
         inputRange: [0, 150],
-        outputRange: ['rgba(173, 216, 230, 1)', 'lightgrey'],
+        outputRange: ['#5ecdf9', 'lightgrey'],
         extrapolate: 'clamp',
     });
 
@@ -359,7 +359,6 @@ const FoodDashboard = (props) => {
         setNearbyRestaurants(filteredData);
     }, [restaurants])
     
-
     const renderRestaurants = ({ item, index }) => {
         const distanceInKm = (item.distance / 1000).toFixed(2);
 
@@ -530,8 +529,8 @@ const FoodDashboard = (props) => {
                     </View>
 
                     <View style={styles.vegmode}>
-                            <Switch value={vegMode} onValueChange={onToggleSwitch} />
-                            <Text style={{color:'red'}}>Veg Mode</Text>
+                            <Switch value={vegMode} onValueChange={onToggleSwitch} color='green' />
+                            <Text style={{color:'green'}}>Veg Mode</Text>
                      </View>
 
                     <View style={styles.searchBar}>
@@ -544,7 +543,7 @@ const FoodDashboard = (props) => {
                         <Icon
                             name="search"
                             size={24}
-                            color="#888888"
+                            color="white"
                             style={styles.searchIcon}
                         />
                     </View>
@@ -745,11 +744,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     headerContainer: {
-        padding: 10,
-        backgroundColor: 'lightblue', // This will be animated to grey when scrolled up
-        borderBottomLeftRadius: 40,
-        borderBottomRightRadius: 40,
         paddingBottom: 20,
+        backgroundColor: '#5ecdf9', // This will be animated to grey when scrolled up
         zIndex: 1,
         overflow: 'hidden',
     },
@@ -762,13 +758,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginLeft: 8,
         fontWeight: 'bold',
-        color: '#333',
+        color: 'white',
         width: '50%',
     },
     vegmode: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
       alignItems: 'center',
+      marginHorizontal: 10
     },
     searchBar: {
         flexDirection: 'row',
@@ -790,7 +787,7 @@ const styles = StyleSheet.create({
     },
     searchIcon: {
         padding: 5,
-        backgroundColor: 'blue',
+        backgroundColor: '#5ecdf9',
         borderRadius: 20,
     },
     weatherContainer: {
@@ -803,7 +800,7 @@ const styles = StyleSheet.create({
     weatherText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#333',
+        color: 'white',
         marginBottom: 10,
         textAlign: 'center',
     },
@@ -832,8 +829,7 @@ const styles = StyleSheet.create({
     headerOffer: {
         marginTop: 10,
         width: '100%',
-        height: 120,
-        borderRadius: 10,
+        height: '100%',
         opacity: 1, // This will be animated to fade out
     },
     foodListsContainer: {

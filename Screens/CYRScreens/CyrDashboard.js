@@ -295,7 +295,7 @@ const CyrDashboard = (props) => {
     if (ridesData?.length) {
       console.log('check1', ridesData)
       Animated.timing(slideUpAnim, {
-        toValue: 500,
+        toValue: 800,
         duration: 500,
         useNativeDriver: true,
       }).start();
@@ -669,25 +669,19 @@ const CyrDashboard = (props) => {
       <View style={{ paddingLeft: 20, paddingRight: 20 }}>
         <Text style={styles.exploreHeading}>Explore</Text>
         <View style={styles.iconsContainer}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={()=> setManualEntry(true)}>
             <View style={{ backgroundColor: '#f5f4f5', padding: 8, borderRadius: 20 }}>
               <Image source={require('../../assets/bike.png')} style={styles.icon} />
             </View>
             <Text style={{ color: 'black', textAlign: 'center', fontWeight: '700' }}>Bike</Text>
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={()=> setManualEntry(true)}>
             <View style={{ backgroundColor: '#f5f4f5', padding: 8, borderRadius: 20 }}>
               <Image source={require('../../assets/cab.png')} style={styles.icon} />
             </View>
             <Text style={{ color: 'black', textAlign: 'center', fontWeight: '700' }}>Cab</Text>
           </TouchableOpacity>
-          <TouchableOpacity>
-            <View style={{ backgroundColor: '#f5f4f5', padding: 8, borderRadius: 20 }}>
-              <Image source={require('../../assets/cab.png')} style={styles.icon} />
-            </View>
-            <Text style={{ color: 'black', textAlign: 'center', fontWeight: '700' }}>Auto</Text>
-          </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={()=> setManualEntry(true)}>
             <View style={{ backgroundColor: '#f5f4f5', padding: 8, borderRadius: 20 }}>
               <Image source={require('../../assets/cab.png')} style={styles.icon} />
             </View>
@@ -946,7 +940,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   bookButton: {
-    backgroundColor: 'lightblue',
+    backgroundColor: '#5ecdf9',
     padding: 15,
     alignItems: 'center',
     borderRadius: 15,

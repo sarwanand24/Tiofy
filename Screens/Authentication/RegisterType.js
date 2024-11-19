@@ -16,7 +16,7 @@ const { width, height } = Dimensions.get("window");
 
 function RegisterType(props) {
 
-    const [mobileNo, setMobileNo] = useState("");
+    const [email, setemail] = useState("");
     const [loading, setloading] = useState(false);
     const [errorVisible, setErrorVisible] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
@@ -26,19 +26,22 @@ function RegisterType(props) {
   
 
     const Login = async() => {
-        if(mobileNo == ""){
-          setErrorMessage('Mobile No. is required.');
+        if(email == ""){
+          setErrorMessage('Email Id. is required.');
           setErrorVisible(true);
             return
         }
         setloading(true);
+        console.log(email)
+        const generatedOtp = Math.floor(100000 + Math.random() * 900000);
        await fetch("https://trioserver.onrender.com/api/v1/users/login",{
             method:"POST",
             headers:{
               'Content-Type': 'application/json'
             },
             body:JSON.stringify({
-              "mobileNo":mobileNo
+              "email":email,
+              "otp": generatedOtp
             })
           })
           .then(res=>res.json())
@@ -48,7 +51,7 @@ function RegisterType(props) {
               console.log(data.data.accessToken);
               if(data.data.accessToken) {
                 setloading(false);
-                props.navigation.push('Login', {token: data.data.accessToken, mobileNo, Userdata: data.data});
+                props.navigation.push('Login', {token: data.data.accessToken, email, Userdata: data.data, otp: generatedOtp});
               }
               else{
                 setloading(false);
@@ -220,14 +223,13 @@ function RegisterType(props) {
             <Image source={require('../../assets/Logo/TiofyLogo2.png')}
              style={{width: width/1.5, height:height/2.5, marginHorizontal: width/6}} />
             <View style={styles.inputContainer}>
-                <Text style={[styles.text, {color:'darkblue'}]}>+91</Text>
                 <TextInput
                     style={styles.input}
-                    keyboardType='numeric'
+                    placeholder='Email'
                     onChangeText={(text)=>{
-                        setMobileNo(text)
+                        setemail(text)
                     }}
-                    value={mobileNo}
+                    value={email}
                 />
             </View>
             <TouchableOpacity

@@ -3,8 +3,7 @@ import { BottomNavigation, Text } from 'react-native-paper';
 import TiofyDashboard from './TiofyDashboard'; // Assuming this is the component we are working on
 import OrderHistory from './OrderHistory';
 import Cart from './Cart';
-
-const Account = () => <Text>Account</Text>;
+import Account from './Account';
 
 const MainApp = (props) => {
   const [index, setIndex] = useState(0);
@@ -27,7 +26,7 @@ const MainApp = (props) => {
       navigationState={{ index, routes }}
       onIndexChange={setIndex}
       renderScene={renderScene}
-      barStyle={{ backgroundColor: 'blue', height: 50 }}
+      barStyle={{ backgroundColor: '#5ecdf9', height: 50 }}
       activeColor='lightpink'
       inactiveColor='white'
     />

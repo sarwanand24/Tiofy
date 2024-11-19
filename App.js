@@ -18,7 +18,15 @@ import MapDirection from './Screens/FoodScreens/MapDirection';
 import FoodOrderHistory from './Screens/FoodScreens/FoodOrderHistory';
 import CyrDashboard from './Screens/CYRScreens/CyrDashboard';
 import CyrLoader from './Screens/CYRScreens/CyrLoader';
+import HotelLoader from './Screens/HotelScreens/HotelLoader';
 import CyrMapDirection from './Screens/CYRScreens/CyrMapDirection';
+import HotelDashboard from './Screens/HotelScreens/HotelDashboard';
+import Hotel from './Screens/HotelScreens/Hotel';
+import CityNames from './Screens/HotelScreens/CityNames';
+import Flat from './Screens/HotelScreens/Flat';
+import HotelCart from './Screens/HotelScreens/HotelCart';
+import HotelOrderHistory from './Screens/HotelScreens/HotelOrderHistory';
+import HotelRatingSummary from './Screens/HotelScreens/HotelRatingSummary';
 
 const Stack = createNativeStackNavigator();
 
@@ -38,14 +46,22 @@ const App = () => {
         <Stack.Screen name="CyrDashboard" component={CyrDashboard} />
         <Stack.Screen name="Restaurant" component={Restaurant} />
         <Stack.Screen name="FoodCart" component={FoodCart} />
+        <Stack.Screen name="HotelCart" component={HotelCart} />
         <Stack.Screen name="FoodOrderHistory" component={FoodOrderHistory} />
+        <Stack.Screen name="HotelOrderHistory" component={HotelOrderHistory} />
         <Stack.Screen name="MapDirection" component={MapDirection} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Signup" component={Signup} />
         <Stack.Screen name="Loading" component={Loading} />
         <Stack.Screen name="FoodLoader" component={FoodLoader} />
         <Stack.Screen name="CyrLoader" component={CyrLoader} />
+        <Stack.Screen name="HotelLoader" component={HotelLoader} />
         <Stack.Screen name="CyrMapDirection" component={CyrMapDirection} />
+        <Stack.Screen name="HotelDashboard" component={HotelDashboard} />
+        <Stack.Screen name="Hotel" component={Hotel} />
+        <Stack.Screen name="Flat" component={Flat} />
+        <Stack.Screen name="CityNames" component={CityNames} />
+        <Stack.Screen name="HotelRatingSummary" component={HotelRatingSummary} />
       </Stack.Navigator>
     </NavigationContainer>
   );
