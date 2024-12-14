@@ -10,10 +10,10 @@ const HotelRatingSummary = ({ hotelId }) => {  // Pass hotelId as a prop
     const fetchGroupedRatings = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`https://01e9-2402-3a80-4378-bc2f-c481-96f5-f8f6-8695.ngrok-free.app/api/v1/hotelRating/get-grouped-ratings/${hotelId}`);
+        const response = await axios.get(`https://trioserver.onrender.com/api/v1/hotelRating/get-grouped-ratings/${hotelId}`);
         setGroupedRatings(response.data.data); // Set the grouped ratings to state
       } catch (error) {
-        console.error('Error fetching grouped ratings:', error);
+        console.log('Error fetching grouped ratings:', error);
       } finally {
         setLoading(false);
       }
@@ -33,7 +33,7 @@ const HotelRatingSummary = ({ hotelId }) => {  // Pass hotelId as a prop
   );
 
   if (loading) {
-    return <Text>Loading...</Text>;
+    return <Text style={{color:'#ffff00', textAlign:'center'}}>Loading...</Text>;
   }
 
   return (
@@ -46,7 +46,7 @@ const HotelRatingSummary = ({ hotelId }) => {  // Pass hotelId as a prop
           keyExtractor={(item) => item._id.toString()}
         />
       ) : (
-        <Text>No ratings available for this hotel.</Text>
+        <Text style={{color:'white'}}>No ratings available for this hotel.</Text>
       )}
     </View>
   );
@@ -56,13 +56,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#9f0d91',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: '#333',
+    color: '#ffff00',
   },
   ratingGroup: {
     marginBottom: 20,
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: 'white',
   },
   ratingLine: {
     height: 6,
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   },
   ratingCount: {
     fontSize: 14,
-    color: '#555',
+    color: 'white',
   },
 });
 

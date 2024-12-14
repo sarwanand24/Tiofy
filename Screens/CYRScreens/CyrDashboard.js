@@ -13,14 +13,16 @@ import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import polyline from '@mapbox/polyline';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import RiderSearchLoader from './RiderSearchLoader';
 
 const { width, height } = Dimensions.get('window');
+
+const GOOGLE_API_KEY = 'AIzaSyCEaITG1Dzxu2l4rrNzABJ3aU-9tbBrZRk';
 
 const CyrDashboard = (props) => {
   const [pickupLocation, setPickupLocation] = useState(null);
   const [dropLocation, setDropLocation] = useState(null);
-  const [pickupSuggestions, setPickupSuggestions] = useState([]);
-  const [dropSuggestions, setDropSuggestions] = useState([]);
   const [manualEntry, setManualEntry] = useState(false);
   const [permissionScreen, setPermissionScreen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
@@ -41,6 +43,12 @@ const CyrDashboard = (props) => {
   const [mapReady, setMapReady] = useState(false);
   const [arrivalTime, setArrivalTime] = useState('');
   const [undeliveredOrders, setUndeliveredOrders] = useState([]);
+  const [deliveryFeeBike, setDeliveryFeeBike] = useState(10.5);
+  const [deliveryFeeCar, setDeliveryFeeCar] = useState(20.5);
+  const [deliveryFeeAuto, setDeliveryFeeAuto] = useState(15.5);
+  const [hiddenOrders, setHiddenOrders] = useState([]);
+  const [riderSearch, setRiderSearch] = useState(false);
+  const [noRidersFound, setNoRidersFound] = useState(false);
 
   const onMapLayout = () => {
     setMapReady(true);
@@ -50,14 +58,6 @@ const CyrDashboard = (props) => {
   const scrollIntervalRef = useRef(null);
 
   const animation = useRef(new Animated.Value(0)).current;
-
-  // Dummy JSON data for locations
-  const locationsData = [
-    { lat: 28.7041, long: 77.1025, placeName: 'New Delhi', city: 'Delhi', pincode: '110001' },
-    { lat: 19.0760, long: 72.8777, placeName: 'Mumbai', city: 'Mumbai', pincode: '400001' },
-    { lat: 22.3302307, long: 87.323509, placeName: 'Chota Tengra', city: 'Kharagpur, West Bengal, India', pincode: '721301' },
-    // Add more as needed
-  ];
 
   // Request location permissions
   const requestLocationPermission = async () => {
@@ -109,16 +109,35 @@ const CyrDashboard = (props) => {
     }
   };
 
-  // Match current location with JSON data
-  const matchLocation = (lat, long) => {
+  const matchLocation = async (lat, long) => {
     try {
-      const matchedLocation = locationsData.find(
-        (loc) => Math.abs(loc.lat - lat) < 0.01 && Math.abs(loc.long - long) < 0.01
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${long}&key=${GOOGLE_API_KEY}`
       );
-      console.log('MatchedLocation:', matchedLocation)
-      if (matchedLocation) {
+
+      console.log('Response:', response);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Data:', data);
+
+      if (data.results && data.results.length > 0) {
+        // Extract address components
+        const addressComponents = data.results[0].address_components;
+        const city = addressComponents.find(comp => comp.types.includes('locality'))?.long_name || 'N/A';
+        const state = addressComponents.find(comp => comp.types.includes('administrative_area_level_1'))?.long_name || 'N/A';
+        const country = addressComponents.find(comp => comp.types.includes('country'))?.long_name || 'N/A';
+        const pincode = addressComponents.find((component) => component.types.includes('postal_code'))?.long_name || 'N/A';
+        // Full address and display name
+        const fullAddress = `${city}, ${state}, ${country}`;
+        const formattedAddress = data.results[0].formatted_address;
+        const placename = formattedAddress.split(', ').slice(1).join(', ');
         setPermissionScreen(false);
-        setPickupLocation(matchedLocation);
+        setPickupLocation({ lat, long, placeName: placename, city: fullAddress, pincode });
+        console.log('pickupLocation set successs.....')
       } else {
         setPermissionScreen(false);
         setShowNotification(true);
@@ -170,47 +189,25 @@ const CyrDashboard = (props) => {
 
   useEffect(() => {
     const fetchUndeliveredOrders = async () => {
-        try {
-            const token = await AsyncStorage.getItem('token')
-            const response = await axios.get('https://trioserver.onrender.com/api/v1/cyrOrder/getUserUndeliveredOrders', {
-                headers: {
-                    'Authorization': `Bearer ${token}` // Add the token to the Authorization header
-                }
-            }); // Adjust the endpoint as needed
-            console.log('responseeoooo', response.data);
-            setUndeliveredOrders(response.data);
-        } catch (error) {
-            console.error('Error fetching undelivered orders:', error);
-        }
+      try {
+        const token = await AsyncStorage.getItem('token')
+        const response = await axios.get('https://trioserver.onrender.com/api/v1/cyrOrder/getUserUndeliveredOrders', {
+          headers: {
+            'Authorization': `Bearer ${token}` // Add the token to the Authorization header
+          }
+        }); // Adjust the endpoint as needed
+        console.log('responseeoooo', response.data);
+        setUndeliveredOrders(response.data);
+      } catch (error) {
+        console.log('Error fetching undelivered orders:', error);
+      }
     };
 
     fetchUndeliveredOrders();
-}, []);
+  }, []);
 
-  // Function to handle location input change for pickup or drop
-  const handleLocationInputChange = (text, isPickup) => {
-    const suggestions = locationsData.filter((loc) =>
-      loc.placeName.toLowerCase().includes(text.toLowerCase())
-    );
-
-    if (isPickup) {
-      setPickupLocation({ placeName: text });
-      setPickupSuggestions(suggestions);
-    } else {
-      setDropLocation({ placeName: text });
-      setDropSuggestions(suggestions);
-    }
-  };
-
-  // Select suggestion for pickup or drop
-  const selectSuggestion = (location, isPickup) => {
-    if (isPickup) {
-      setPickupLocation(location); // Set full location details for pickup
-      setPickupSuggestions([]);    // Clear suggestions
-    } else {
-      setDropLocation(location);    // Set full location details for drop
-      setDropSuggestions([]);
-    }
+  const handleHideOrder = (orderId) => {
+    setHiddenOrders((prev) => [...prev, orderId]); // Add the order ID to the hidden list
   };
 
   useEffect(() => {
@@ -241,6 +238,7 @@ const CyrDashboard = (props) => {
 
   useEffect(() => {
     // Check if both pickupLocation and dropLocation are set
+    console.log(`PIckup&DroplOcation:...........`, pickupLocation, `:::`, dropLocation)
     if (
       pickupLocation && dropLocation &&
       pickupLocation.lat && pickupLocation.long && pickupLocation.placeName &&
@@ -277,6 +275,13 @@ const CyrDashboard = (props) => {
       const distance = data.routes[0].distance;
       const duration = data.routes[0].duration;
 
+      const response2 = await fetch('https://trioserver.onrender.com/api/v1/users/get-all-fees');
+      const data2 = await response2.json();
+
+      setDeliveryFeeBike(data2?.deliveryFeeBike || 10.5)
+      setDeliveryFeeCar(data2?.deliveryFeeCar || 20.5)
+      setDeliveryFeeAuto(data2?.deliveryFeeAuto || 15.5)
+
       setRouteDistance(distance);
       setRouteDuration(duration);
 
@@ -287,23 +292,23 @@ const CyrDashboard = (props) => {
 
       setRouteCoordinates(coordinates);
     } catch (error) {
-      console.error('Error fetching route:', error);
-    } 
+      console.log('Error fetching route Rani:', error);
+    }
   };
 
   useEffect(() => {
     if (ridesData?.length) {
       console.log('check1', ridesData)
       Animated.timing(slideUpAnim, {
-        toValue: 800,
+        toValue: height - 50,
         duration: 500,
         useNativeDriver: true,
       }).start();
     }
   }, [ridesData])
 
-  useEffect(()=>{
-        setSelectedVehicleType(ridesData.length > 0 ? ridesData[0].vehicleType : null)
+  useEffect(() => {
+    setSelectedVehicleType(ridesData.length > 0 ? ridesData[0].vehicleType : null)
   }, [ridesData])
 
   const handleVehicleSelect = (vehicleType) => {
@@ -313,10 +318,10 @@ const CyrDashboard = (props) => {
   useEffect(() => {
     const fetchOffersData = async () => {
       try {
-        const response = await axios.get('https://trioserver.onrender.com/api/v1/users/offer-images');
+        const response = await axios.get('https://trioserver.onrender.com/api/v1/users/cyr-offer-images');
         setOffersData(response.data);
       } catch (error) {
-        console.error('Error fetching offers data', error);
+        console.log('Error fetching offers data', error);
       }
     };
 
@@ -345,10 +350,11 @@ const CyrDashboard = (props) => {
     }
   }, [offersData]);
 
-   const handleBookRide = async () => {
+  const handleBookRide = async () => {
     // Check if the response contains multiple vehicle types
     setManualEntry(false);
-    setLoading(true);// show rider search here
+    setLoading(false);// show rider search here
+    setRiderSearch(true)
 
     const selectedCategory = ridesData.find(category => category.vehicleType === selectedVehicleType);
 
@@ -364,12 +370,13 @@ const CyrDashboard = (props) => {
       console.log("SocketId", socket.id);
       const otp = Math.floor(1000 + Math.random() * 9000);
       console.log(`Generated OTP: ${otp}`);
-      const bill = (routeDistance / 1000).toFixed(1) * 10;// make it autometa
+      const bill = (Math.ceil(routeDistance / 1000) * (selectedVehicleType == 'Bike' ? (deliveryFeeBike) : selectedVehicleType == 'Auto' ? (deliveryFeeAuto) : (deliveryFeeCar)));// make it autometa
       socket.emit("CyrRidePlaced", { riders: filteredRiders, userDeviceToken, otp, Userdata, socketId: socket.id, bill, pickupLocation, dropLocation, selectedVehicleType })
       // Here you can proceed with the booking logic using filteredRiders
     } else {
       // Handle case where the selected vehicle type doesn't match any category
       console.warn('No riders available for this vehicle type.');
+      setRiderSearch(false);
     }
   };
 
@@ -382,16 +389,16 @@ const CyrDashboard = (props) => {
 
         // Check if the order is for the current user
         if (data.userId === Userdata._id) {
-          setLoading(false);
           // Navigate to the MapDirection screen
-          props.navigation.push("CyrMapDirection", { 
-            orderId: data.orderId, 
-            socket, 
-            userId: Userdata._id 
+          setRiderSearch(false);
+          props.navigation.push("CyrMapDirection", {
+            orderId: data.orderId,
+            socket,
+            userId: Userdata._id
           });
         }
       } catch (error) {
-        console.error("Error handling order accepted event: ", error);
+        console.log("Error handling order accepted event: ", error);
       }
     };
 
@@ -402,28 +409,34 @@ const CyrDashboard = (props) => {
     return () => {
       socket.off("CyrRideAcceptedbyRider", handleOrderAccepted);
     };
-  }, [socket]); 
+  }, [socket]);
 
-  socket.on("NoRiderFoundForCYR", async (data) => {
-    const StringUserdata = await AsyncStorage.getItem("Userdata")
-    const Userdata = JSON.parse(StringUserdata);
-    if (data.userId == Userdata._id) {
-      console.log("Show No Rider Available or Found Screen Animation...")
-      setManualEntry(false);
-      //replace below with diff animation
-      return (
-      <CyrLoader />
-      );
-    }
-  })
+  useEffect(() => {
+    socket.on("NoRiderFoundForCYR", async (data) => {
+        const StringUserdata = await AsyncStorage.getItem("Userdata");
+        const Userdata = JSON.parse(StringUserdata);
+        if (data.userId === Userdata._id) {
+          console.log('NO rider found screen --------')
+            setRiderSearch(false);
+            setNoRidersFound(true); // Show "No Riders Found" UI
+        }
+    });
+
+    return () => {
+        socket.off("NoRiderFoundForCYR");
+    };
+}, [socket]);
 
   useEffect(() => {
     if (manualEntry) {
       // Focus on the empty TextInput
+      console.log('enrty in reffffffffffff')
       if (!pickupLocation?.placeName) {
         pickupInputRef.current?.focus();
         setHeaderText('Pickup');
       } else if (!dropLocation?.placeName) {
+        console.log('enrty in reffffffffffff 22222')
+        pickupInputRef.current.setAddressText(pickupLocation.placeName);
         dropInputRef.current?.focus();
         setHeaderText('Drop');
       }
@@ -431,105 +444,245 @@ const CyrDashboard = (props) => {
   }, [manualEntry]);
 
   const handleLocationFocus = (isPickup) => {
+    console.log('Entry in handleFocus Functiuon....')
     setHeaderText(isPickup ? 'Pickup' : 'Drop');
   };
 
-  useEffect(() => {
-    const calculateArrivalTime = () => {
-      const currentTime = new Date();
-      currentTime.setMinutes(currentTime.getMinutes() + routeDuration);
-      
-      // Format the time (hh:mm AM/PM)
-      const hours = currentTime.getHours();
-      const minutes = currentTime.getMinutes();
-      const formattedTime = `${hours % 12 || 12}:${minutes < 10 ? '0' : ''}${minutes} ${hours >= 12 ? 'PM' : 'AM'}`;
-      
-      setArrivalTime(formattedTime);
-    };
+  // useEffect(() => {
+  //   const calculateArrivalTime = () => {
+  //     const currentTime = new Date();
+  //     console.log('curretTime before:', currentTime)
+  //     currentTime.setMinutes(currentTime.getMinutes() + (routeDuration / 60));
+  //     // Format the time (hh:mm AM/PM)
+  //     const hours = currentTime.getHours();
+  //     const minutes = currentTime.getMinutes();
+  //     const formattedTime = `${hours % 12 || 12}:${minutes < 10 ? '0' : ''}${minutes} ${hours >= 12 ? 'PM' : 'AM'}`;
+  //     console.log('LogOfAll', routeDuration, currentTime, hours, minutes, formattedTime, routeDistance)
+  //     setArrivalTime(formattedTime);
+  //   };
 
-    calculateArrivalTime();
-  }, [routeDuration]);
+  //   calculateArrivalTime();
+  // }, [routeDuration]);
 
   if (manualEntry) {
     // Only show pickup and drop inputs if location is granted or manual entry is chosen
     return (
       <View style={styles.inputContainer}>
 
-     {!ridesData.length && (
-      <View>
-         <TouchableOpacity onPress={() => setManualEntry(false)} style={styles.headerContainer}>
-          <Icon name="arrow-left" size={23} color="#000" style={{ padding: 10 }} />
-          <Text style={styles.headerText}>{headerText}</Text>
-        </TouchableOpacity>
+        {!ridesData.length && (
+          <View>
+            <TouchableOpacity onPress={() => setManualEntry(false)} style={styles.headerContainer}>
+              <Icon name="arrow-left" size={23} color="#000" style={{ padding: 10 }} />
+              <Text style={styles.headerText}>{headerText}</Text>
+            </TouchableOpacity>
 
-        {/* Pickup Input */}
-        <View style={styles.locInputContainer}>
-          <View style={styles.locInputContainer2}>
-            <Icon name="circle-dot" size={15} color="green" />
-            <TextInput
-              ref={pickupInputRef}
-              style={styles.input}
-              placeholder="Pickup Location"
-              value={pickupLocation?.placeName || ''}
-              onChangeText={(text) => handleLocationInputChange(text, true)}
-              onFocus={() => handleLocationFocus(true)}
-            />
+            {/* Pickup Input */}
+            <View style={styles.locInputContainer}>
+              <View style={styles.locInputContainer2}>
+                <Icon name="circle-dot" size={15} color="green" />
+
+                <GooglePlacesAutocomplete
+                  ref={pickupInputRef}
+                  placeholder='Pickup Location'
+                  fetchDetails={true}
+                  onPress={(data, details = null) => {
+                    console.log('Log of autocomplete:', details);
+                    if (details) {
+                      const addressComponents = details.address_components;
+
+                      // Extract city, state, and country
+                      const city = addressComponents.find((component) =>
+                        component.types.includes('locality')
+                      )?.long_name || 'N/A';
+
+                      const state = addressComponents.find((component) =>
+                        component.types.includes('administrative_area_level_1')
+                      )?.long_name || 'N/A';
+
+                      const country = addressComponents.find((component) =>
+                        component.types.includes('country')
+                      )?.long_name || 'N/A';
+
+                      // Set the pickup location
+                      setPickupLocation({
+                        lat: details.geometry.location.lat,
+                        long: details.geometry.location.lng,
+                        placeName: data.description,
+                        city: `${city}, ${state}, ${country}`, // Format as required
+                        pincode: addressComponents.find((component) =>
+                          component.types.includes('postal_code')
+                        )?.long_name || 'N/A',
+                      });
+                    }
+                  }}
+                  query={{
+                    key: GOOGLE_API_KEY,  // Your Google API Key here
+                    language: 'en',
+                  }}
+                  textInputProps={{
+                    onFocus: () => handleLocationFocus(true),
+                    placeholderTextColor: 'black', // Attach the onFocus handler here
+                  }}
+                  suppressDefaultStyles={true}
+                  styles={{
+                    container: {
+                      flex: 1,
+                    },
+                    textInputContainer: {
+                      flexDirection: 'row',
+                    },
+                    textInput: {
+                      backgroundColor: '#eeeeee',
+                      color: 'black',
+                      height: 44,
+                      borderRadius: 5,
+                      paddingVertical: 5,
+                      paddingHorizontal: 10,
+                      fontSize: 15,
+                      flex: 1,
+                    },
+                    poweredContainer: {
+                      justifyContent: 'flex-end',
+                      alignItems: 'center',
+                      borderBottomRightRadius: 5,
+                      borderBottomLeftRadius: 5,
+                      borderColor: '#c8c7cc',
+                      borderTopWidth: 0.5,
+                    },
+                    powered: {},
+                    listView: {
+                      color: 'black'
+                    },
+                    row: {
+                      backgroundColor: '#eeeeee',
+                      color: 'black',
+                      padding: 13,
+                      height: 44,
+                      flexDirection: 'row',
+                    },
+                    separator: {
+                      height: 0.5,
+                      backgroundColor: '#c8c7cc',
+                    },
+                    description: {
+                      color: 'black'
+                    },
+                    loader: {
+                      flexDirection: 'row',
+                      justifyContent: 'flex-end',
+                      height: 20,
+                    },
+                  }}
+                />
+
+              </View>
+
+              <View style={styles.horizontalLine} />
+
+              {/* Drop Input */}
+              <View style={styles.locInputContainer2}>
+                <Icon name="circle-dot" size={15} color="red" />
+                <GooglePlacesAutocomplete
+                  ref={dropInputRef}
+                  placeholder='Drop Location'
+                  fetchDetails={true}
+                  onPress={(data, details = null) => {
+                    console.log('Log of autocomplete:', details);
+                    if (details) {
+                      const addressComponents = details.address_components;
+
+                      // Extract city, state, and country
+                      const city = addressComponents.find((component) =>
+                        component.types.includes('locality')
+                      )?.long_name || 'N/A';
+
+                      const state = addressComponents.find((component) =>
+                        component.types.includes('administrative_area_level_1')
+                      )?.long_name || 'N/A';
+
+                      const country = addressComponents.find((component) =>
+                        component.types.includes('country')
+                      )?.long_name || 'N/A';
+
+                      // Set the pickup location
+                      setDropLocation({
+                        lat: details.geometry.location.lat,
+                        long: details.geometry.location.lng,
+                        placeName: data.description,
+                        city: `${city}, ${state}, ${country}`, // Format as required
+                        pincode: addressComponents.find((component) =>
+                          component.types.includes('postal_code')
+                        )?.long_name || 'N/A',
+                      });
+                    }
+                  }}
+                  query={{
+                    key: GOOGLE_API_KEY,  // Your Google API Key here
+                    language: 'en',
+                  }}
+                  textInputProps={{
+                    onFocus: () => handleLocationFocus(false),
+                    placeholderTextColor: 'black', // Attach the onFocus handler here
+                  }}
+                  suppressDefaultStyles={true}
+                  styles={{
+                    container: {
+                      flex: 1,
+                    },
+                    textInputContainer: {
+                      flexDirection: 'row',
+                    },
+                    textInput: {
+                      backgroundColor: '#eeeeee',
+                      color: 'black',
+                      height: 44,
+                      borderRadius: 5,
+                      paddingVertical: 5,
+                      paddingHorizontal: 10,
+                      fontSize: 15,
+                      flex: 1,
+                    },
+                    poweredContainer: {
+                      justifyContent: 'flex-end',
+                      alignItems: 'center',
+                      borderBottomRightRadius: 5,
+                      borderBottomLeftRadius: 5,
+                      borderColor: '#c8c7cc',
+                      borderTopWidth: 0.5,
+                    },
+                    powered: {},
+                    listView: {
+                      color: 'black'
+                    },
+                    row: {
+                      backgroundColor: '#eeeeee',
+                      color: 'black',
+                      padding: 13,
+                      height: 44,
+                      flexDirection: 'row',
+                    },
+                    separator: {
+                      height: 0.5,
+                      backgroundColor: '#c8c7cc',
+                    },
+                    description: {
+                      color: 'black'
+                    },
+                    loader: {
+                      flexDirection: 'row',
+                      justifyContent: 'flex-end',
+                      height: 20,
+                    },
+                  }}
+                />
+              </View>
+            </View>
+
+            <View style={styles.horizontalLine2} >
+              <Animated.View style={[styles.blueLine, { width: animatedWidth }]} />
+            </View>
           </View>
-          <View style={styles.horizontalLine} />
-          {/* Drop Input */}
-          <View style={styles.locInputContainer2}>
-            <Icon name="circle-dot" size={15} color="red" />
-            <TextInput
-              ref={dropInputRef}
-              style={styles.input}
-              placeholder="Drop Location"
-              value={dropLocation?.placeName || ''}
-              onChangeText={(text) => handleLocationInputChange(text, false)}
-              onFocus={() => handleLocationFocus(false)}
-            />
-          </View>
-        </View>
-
-        <View style={styles.horizontalLine2} >
-          <Animated.View style={[styles.blueLine, { width: animatedWidth }]} />
-        </View>
-
-        {/* Drop Suggestions List */}
-        {dropSuggestions.length > 0 && (
-          <FlatList
-            data={dropSuggestions}
-            keyExtractor={(item) => item.pincode}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.suggestionContainer} onPress={() => selectSuggestion(item, false)}>
-                <Icon name="clock-rotate-left" size={15} color="darkblue" />
-                <View style={{ marginLeft: 20 }}>
-                  <Text style={styles.suggestionText}>{item.placeName}</Text>
-                  <Text style={styles.suggestionText2}>{item.city}</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            style={styles.suggestionsList}
-          />
         )}
-        {/* Pickup Suggestions List */}
-        {pickupSuggestions.length > 0 && (
-          <FlatList
-            data={pickupSuggestions}
-            keyExtractor={(item) => item.pincode}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.suggestionContainer} onPress={() => selectSuggestion(item, true)}>
-                <Icon name="clock-rotate-left" size={15} color="darkblue" />
-                <View style={{ marginLeft: 20 }}>
-                  <Text style={styles.suggestionText}>{item.placeName}</Text>
-                  <Text style={styles.suggestionText2}>{item.city}</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            style={styles.suggestionsList}
-          />
-        )}
-        </View> 
-      )}
 
         {ridesData.length > 0 && pickupLocation && dropLocation && (
           <View>
@@ -537,108 +690,124 @@ const CyrDashboard = (props) => {
               setManualEntry(false);
               setRidesData([]);
               setDropLocation(null);
-              }} style={styles.headerContainer2}>
-          <Icon name="arrow-left" size={23} color="#000" style={{ padding: 10 }} />
-        </TouchableOpacity>
+            }} style={styles.headerContainer2}>
+              <Icon name="arrow-left" size={23} color="#000" style={{ padding: 10 }} />
+            </TouchableOpacity>
             <MapView
-        ref={mapRef}
-        provider={PROVIDER_DEFAULT}
-        style={styles.map}
-        onLayout={onMapLayout}
-        region={{
-          latitude: pickupLocation.lat,
-          longitude: pickupLocation.long,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }}
-        customMapStyle={[]}
-        tileOverlay={{
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          maximumZ: 19,
-        }}
-      >
-       {mapReady && (
-            <>
-              <Marker
-                coordinate={{
-                  latitude: pickupLocation.lat,
-                  longitude: pickupLocation.long,
-                }}
-                title="User"
-                description="User Location"
-              >
-                <Image source={require('../../assets/person.png')} style={styles.markerImage} />
-              </Marker>
+              ref={mapRef}
+              provider={PROVIDER_DEFAULT}
+              style={styles.map}
+              onLayout={onMapLayout}
+              region={{
+                latitude: pickupLocation.lat,
+                longitude: pickupLocation.long,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+              }}
+              customMapStyle={[]}
+              tileOverlay={{
+                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                maximumZ: 19,
+              }}
+            >
+              {mapReady && (
+                <>
+                  <Marker
+                    coordinate={{
+                      latitude: pickupLocation.lat,
+                      longitude: pickupLocation.long,
+                    }}
+                    title="User"
+                    description="User Location"
+                  >
+                    <Image source={require('../../assets/person.png')} style={styles.markerImage} />
+                  </Marker>
 
-              <Marker
-                coordinate={{
-                  latitude: dropLocation.lat,
-                  longitude: dropLocation.long,
-                }}
-                title="Rider"
-                description="Rider Location"
-              >
-                <Image source={require('../../assets/bike.png')} style={styles.markerImage} />
-              </Marker>
+                  <Marker
+                    coordinate={{
+                      latitude: dropLocation.lat,
+                      longitude: dropLocation.long,
+                    }}
+                    title="Rider"
+                    description="Rider Location"
+                  >
+                    <Image source={require('../../assets/location.webp')} style={styles.markerImage} />
+                  </Marker>
 
-              {routeCoordinates.length > 0 && (
-                <Polyline
-                  coordinates={routeCoordinates}
-                  strokeColor="black"
-                  strokeWidth={5}
-                />
+                  {routeCoordinates.length > 0 && (
+                    <Polyline
+                      coordinates={routeCoordinates}
+                      strokeColor="#68095f"
+                      strokeWidth={5}
+                    />
+                  )}
+                </>
               )}
-            </>
-          )}
-      </MapView>
-          <Animated.View style={[styles.vehicleContainer, { transform: [{ translateY: slideUpAnim }] }]}>
-            <Text style={styles.categoryHeading}>Choose Vehicle</Text>
-            <View style={styles.vehicleList}>
-              {ridesData.map((vehicle) => (
-                <TouchableOpacity
-                  key={vehicle.vehicleType}
-                  style={[
-                    styles.vehicleOption,
-                    selectedVehicleType === vehicle.vehicleType && styles.activeVehicleOption,
-                  ]}
-                  onPress={() => handleVehicleSelect(vehicle.vehicleType)}
-                >
-                  <View style={styles.vehicleInfo}>
-                    <Image source={require('../../assets/bike.png')} style={styles.markerImage} />
+            </MapView>
+            <Animated.View style={[styles.vehicleContainer, { transform: [{ translateY: slideUpAnim }] }]}>
+              <Text style={styles.categoryHeading}>Choose Vehicle</Text>
+              <View style={styles.vehicleList}>
+                {ridesData.map((vehicle) => (
+                  <TouchableOpacity
+                    key={vehicle.vehicleType}
+                    style={[
+                      styles.vehicleOption,
+                      selectedVehicleType === vehicle.vehicleType && styles.activeVehicleOption,
+                    ]}
+                    onPress={() => handleVehicleSelect(vehicle.vehicleType)}
+                  >
+                    <View style={styles.vehicleInfo}>
+                      {vehicle.vehicleType === 'Bike' ? (
+                        <Image source={require('../../assets/cyrBike.png')} style={styles.markerImage} />
+                      ) : vehicle.vehicleType === 'Auto' ? (
+                        <Image source={require('../../assets/cyrAuto.png')} style={styles.markerImage} />
+                      ) : (
+                        <Image source={require('../../assets/cyrCab.png')} style={styles.markerImage} />
+                      )}
+                      <View>
+                        <Text
+                          style={[
+                            styles.vehicleText,
+                            { marginLeft: 10, fontSize: 16, fontWeight: '700' }
+                          ]}
+                        >
+                          {vehicle.vehicleType}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.vehicleText,
+                            { marginLeft: 10, fontSize: 12 }
+                          ]}
+                        >
+                          {Math.ceil(routeDuration/60)} mins
+                        </Text>
+                      </View>
+                    </View>
                    <View>
                    <Text
-                    style={[
-                      styles.vehicleText,
-                      {marginLeft:10, fontSize:16, fontWeight:'700'}
-                    ]}
-                  >
-                    {vehicle.vehicleType}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.vehicleText,
-                      {marginLeft:10, fontSize:12}
-                    ]}
-                  >
-                    Drop {arrivalTime}
-                  </Text>
-                    </View>
-                  </View>
-                  <Text
-                    style={[
-                      styles.vehicleText,
-                      {marginLeft:10, fontSize:16, fontWeight:'700'}
-                    ]}
-                  >
-                     Rs{(routeDistance / 1000).toFixed(1) * 10}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity style={styles.bookButton} onPress={handleBookRide}>
-              <Text style={styles.bookButtonText}>Book {selectedVehicleType}</Text>
-            </TouchableOpacity>
-          </Animated.View>
+                      style={[
+                        styles.vehicleText,
+                        { marginLeft: 10, fontSize: 16, fontWeight: '700' }
+                      ]}
+                    >
+                      Rs{vehicle.vehicleType == 'Bike' ? (Math.ceil(Math.ceil(routeDistance / 1000) * deliveryFeeBike)) : vehicle.vehicleType == 'Auto' ? (Math.ceil(Math.ceil(routeDistance / 1000) * deliveryFeeAuto)) : (Math.ceil(Math.ceil(routeDistance / 1000) * deliveryFeeCar))}
+                    </Text>
+                    <Text
+                          style={[
+                            styles.vehicleText,
+                            { marginLeft: 15, fontSize: 12 }
+                          ]}
+                        >
+                         {Math.ceil(routeDistance / 1000)}Km
+                        </Text>
+                   </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TouchableOpacity style={styles.bookButton} onPress={handleBookRide}>
+                <Text style={styles.bookButtonText}>Book {selectedVehicleType}</Text>
+              </TouchableOpacity>
+            </Animated.View>
           </View>
         )}
 
@@ -651,6 +820,38 @@ const CyrDashboard = (props) => {
       <CyrLoader />
     );
   }
+
+  if (riderSearch) {
+    return <RiderSearchLoader />;
+}
+
+if (noRidersFound) {
+  return (
+      <View style={styles.restroContainer}>
+          <Text style={styles.messageText}>
+              Sorry! We are unable to find any riders for you at the moment!
+          </Text>
+          <Text style={styles.subMessageText}>
+              Please try again after sometimes.
+          </Text>
+          <LottieView
+              source={require('../../assets/Animations/RestroRejected.json')}
+              style={styles.lottie}
+              autoPlay
+              loop
+          />
+          <TouchableOpacity
+              style={styles.resbutton}
+              onPress={() => {
+                  setNoRidersFound(false); // Close the "No Riders Found" UI
+                  props.navigation.pop(2);
+              }}
+          >
+              <Text style={styles.resbuttonText}>Go Back!</Text>
+          </TouchableOpacity>
+      </View>
+  );
+}
 
   return (
     <ScrollView style={styles.searchScreenContainer}>
@@ -669,21 +870,21 @@ const CyrDashboard = (props) => {
       <View style={{ paddingLeft: 20, paddingRight: 20 }}>
         <Text style={styles.exploreHeading}>Explore</Text>
         <View style={styles.iconsContainer}>
-          <TouchableOpacity onPress={()=> setManualEntry(true)}>
+          <TouchableOpacity onPress={() => setManualEntry(true)}>
             <View style={{ backgroundColor: '#f5f4f5', padding: 8, borderRadius: 20 }}>
-              <Image source={require('../../assets/bike.png')} style={styles.icon} />
+              <Image source={require('../../assets/cyrBike.png')} style={styles.icon} />
             </View>
             <Text style={{ color: 'black', textAlign: 'center', fontWeight: '700' }}>Bike</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={()=> setManualEntry(true)}>
+          <TouchableOpacity onPress={() => setManualEntry(true)}>
             <View style={{ backgroundColor: '#f5f4f5', padding: 8, borderRadius: 20 }}>
-              <Image source={require('../../assets/cab.png')} style={styles.icon} />
+              <Image source={require('../../assets/cyrCab.png')} style={styles.icon} />
             </View>
             <Text style={{ color: 'black', textAlign: 'center', fontWeight: '700' }}>Cab</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={()=> setManualEntry(true)}>
+          <TouchableOpacity onPress={() => setManualEntry(true)}>
             <View style={{ backgroundColor: '#f5f4f5', padding: 8, borderRadius: 20 }}>
-              <Image source={require('../../assets/cab.png')} style={styles.icon} />
+              <Image source={require('../../assets/cyrAuto.png')} style={styles.icon} />
             </View>
             <Text style={{ color: 'black', textAlign: 'center', fontWeight: '700' }}>Auto</Text>
           </TouchableOpacity>
@@ -713,7 +914,7 @@ const CyrDashboard = (props) => {
                         style={styles.offerImage}
                         resizeMode="cover"
                       />
-                      <Text style={styles.offerText}>{offer.title}</Text>
+                      {/* <Text style={styles.offerText}>{offer.title}</Text> */}
                     </View>
                   );
                 })}
@@ -723,7 +924,8 @@ const CyrDashboard = (props) => {
         )
       }
 
-      <Image source={require('../../assets/bike.png')} style={styles.bottomImage} />
+      <Image source={require('../../assets/CyrBottom.png')} style={styles.bottomImage} />
+
       {showNotification && (
         <>
           {/* Background overlay for dimming */}
@@ -742,29 +944,45 @@ const CyrDashboard = (props) => {
         </>
       )}
 
-          {/* Undelivered Orders */}
-          {undeliveredOrders.length > 0 && (
-                        <View style={styles.orderBox}>
-                            <ScrollView style={styles.ordersScrollView}>
-                                {undeliveredOrders.map((order, index) => (
-                                    <TouchableOpacity
-                                        key={index}
-                                        style={styles.orderItem}
-                                        onPress={() => {
-                                            props.navigation.push('CyrMapDirection', {
-                                                orderId: order._id,
-                                                socket,
-                                                userId: order.bookedBy,
-                                            });
-                                        }}
-                                    >
-                                        <Text style={styles.orderText}>Your current ride</Text>
-                                        <Text style={styles.orderText}>Order ID: {order._id}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        </View>
-                    )}
+      {/* Undelivered Orders */}
+      {undeliveredOrders.length > 0 && (
+  <View style={styles.orderBox}>
+    <ScrollView style={styles.ordersScrollView}>
+      {undeliveredOrders.map((order, index) => {
+        if (hiddenOrders.includes(order._id)) return null; // Skip hidden orders
+
+        return (
+          <View key={index} style={styles.orderItemContainer}>
+            {/* Close Button */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => handleHideOrder(order._id)} // Hide only this order
+            >
+              <Text style={styles.closeButtonText}>×</Text>
+            </TouchableOpacity>
+
+            {/* Order Details */}
+            <TouchableOpacity
+              style={styles.orderItem}
+              onPress={() => {
+                props.navigation.push('CyrMapDirection', {
+                  orderId: order._id,
+                  socket,
+                  userId: order.bookedBy,
+                });
+              }}
+            >
+              <Text style={styles.orderText}>{order?.rideStatus}</Text>
+              <Text style={styles.orderText}>Otp: {order?.otp}</Text>
+              <Text style={styles.orderText}>Bill: {order?.bill}</Text>
+              <Text style={styles.orderText}>Order ID: {order._id}</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      })}
+    </ScrollView>
+  </View>
+      )}
 
     </ScrollView>
   );
@@ -801,9 +1019,9 @@ const styles = StyleSheet.create({
   },
   input: {
     padding: 10,
-    backgroundColor: 'transparent',
     width: '80%',
-    marginLeft: 10
+    marginLeft: 10,
+    color: 'black'
   },
   searchScreenContainer: {
     flex: 1,
@@ -820,6 +1038,7 @@ const styles = StyleSheet.create({
     width: '90%',
     marginLeft: '5%',
     zIndex: 1, // Ensure search bar remains visible
+    color: 'black'
   },
   searchPlaceholder: {
     fontSize: 18,
@@ -846,11 +1065,13 @@ const styles = StyleSheet.create({
   icon: {
     width: 60,
     height: 60,
+    borderRadius: 20,
     resizeMode: 'contain',
   },
   bottomImage: {
     width: '100%',
-    height: height * 0.3,
+    height: width,
+    resizeMode: 'contain'
   },
   notificationContainer: {
     position: 'absolute',
@@ -1005,6 +1226,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'none'
   },
   horizontalLine: {
     height: 1,
@@ -1051,12 +1273,12 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 10,              // Padding around the entire order box
     backgroundColor: 'transparent', // Make the background transparent to see the light blue cards
-},
-ordersScrollView: {
+  },
+  ordersScrollView: {
     paddingHorizontal: 10,    // Padding inside the scroll view for better alignment
-},
-orderItem: {
-    backgroundColor: '#ADD8E6', // Light blue background for the order item
+  },
+  orderItem: {
+    backgroundColor: '#68095f', // Light blue background for the order item
     borderRadius: 10,           // Rounded corners
     padding: 15,                // Space inside each order box
     marginBottom: 15,           // Space between each order box
@@ -1065,11 +1287,95 @@ orderItem: {
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 3,               // For Android shadow/elevation
-},
-orderText: {
+  },
+  orderText: {
     fontSize: 16,        // Adjust font size for readability
     color: '#FFFAFA',    // Snow-white text color
     marginBottom: 5,     // Space between text lines
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#ff6666',
+    borderRadius: 20,
+    padding: 5,
+    zIndex: 10,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  orderItemContainer: {
+    position: 'relative', // Ensure relative positioning for the close button
+    marginBottom: 15, // Add spacing between orders
+  },
+  restroContainer: {
+    flex: 1,
+    backgroundColor: '#f2f2f2', // Light background for a clean look
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+},
+messageText: {
+    fontSize: 20,
+    color: '#333', // Dark color for contrast
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+},
+subMessageText: {
+    fontSize: 16,
+    color: '#666', // Lighter shade for secondary text
+    textAlign: 'center',
+    marginBottom: 30,
+},
+lottie: {
+    width: width * 0.6, // Lottie animation width to cover a significant part of the screen
+    height: height * 0.3, // Adjust height for good aspect ratio
+    marginBottom: 30,
+},
+resbutton: {
+    backgroundColor: '#68095f', // Vibrant blue for the button
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5, // Shadow for Android
+},
+resbuttonText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+},
+container3: {
+    flex: 1,
+    backgroundColor: '#f7f7f7', // Light, neutral background color
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+},
+mainMessage: {
+    fontSize: 22,
+    color: '#2c3e50', // Dark color for contrast
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
+},
+subMessage: {
+    fontSize: 18,
+    color: '#7f8c8d', // Slightly lighter color for the secondary message
+    textAlign: 'center',
+    marginBottom: 30,
+},
+lottie2: {
+    width: width * 0.7, // Large enough to be noticeable but not overwhelming
+    height: height * 0.4, // Adjust height to maintain aspect ratio
 },
 });
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, Image, TouchableOpacity, TextInput, ScrollView, Dimensions, StyleSheet,
-  PermissionsAndroid
+  PermissionsAndroid, StatusBar
 } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import Icon from 'react-native-vector-icons/Ionicons'; // for icons
@@ -23,18 +23,19 @@ const TiofyDashboard = (props) => {
   const [offersData, setOffersData] = useState([]);
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [query, setQuery] = useState('');
 
   const scrollViewRef = useRef(null);
   const scrollIntervalRef = useRef(null);
 
   useEffect(() => {
-    const updateGreeting = () => {
+    const updateGreeting = async() => {
       const hour = new Date().getHours();
-      if (hour < 12) {
+      if ((hour < 12) && (hour > 4)) {
         setGreeting('Good Morning');
-      } else if (hour < 18) {
+      } else if ((hour < 17) && (hour >= 12)) {
         setGreeting('Good Afternoon');
-      } else if (hour < 21) {
+      } else if ((hour < 21) && (hour >= 17)) {
         setGreeting('Good Evening');
       } else {
         setGreeting('Good Night');
@@ -66,8 +67,9 @@ const TiofyDashboard = (props) => {
       .then(async (data) => {
         console.log(data);
         try {
-          console.log(data.data);
+          console.log('deviceToken-------->', data.data);
           if (data.data.deviceToken) {
+            console.log('deviceToken-------->', data.data.deviceToken);
             await AsyncStorage.setItem("deviceToken", data.data.deviceToken);
           }
           else {
@@ -82,6 +84,18 @@ const TiofyDashboard = (props) => {
       })
 
   }
+
+  useEffect(() => {
+    messaging()
+      .getToken()
+      .then(token => {
+        saveTokenToDatabase(token);
+      });
+
+    return messaging().onTokenRefresh(token => {
+      saveTokenToDatabase(token);
+    });
+  }, []);
 
   const checkLocationPermission = async () => {
     try {
@@ -116,6 +130,7 @@ useEffect(() => {
         const granted = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
         );
+
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
            console.log('granted location permision', granted);     
         } else {
@@ -153,7 +168,7 @@ useEffect(() => {
         resizeMode="cover"
       />
       <View style={styles.carouselTextContainer}>
-        <Text style={styles.carouselText}>{item.title}</Text>
+        {/* <Text style={styles.carouselText}>{item.title}</Text> */}
       </View>
     </View>
     );
@@ -194,13 +209,28 @@ useEffect(() => {
     }
   }, [offersData]);
 
+  const categories = [
+    { name: 'Food', image: require('../assets/Food.png'), route: 'FoodDashboard' },
+    { name: 'Hotel', image: require('../assets/Hotel.png'), route: 'HotelDashboard' },
+    { name: 'Auto&Cab', image: require('../assets/cab.png'), route: 'CyrDashboard' },
+    { name: 'Liquor', image: require('../assets/liquor.png'), route: 'LiquorDashboard' },
+  ];
+
+    // Filter categories based on search query
+    const filteredCategories = query.trim()
+    ? categories.filter(category =>
+        category.name.toLowerCase().includes(query.toLowerCase())
+      )
+    : categories;
+
   return (
-      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      <View style={{ flex: 1, backgroundColor: '#68095f' }}>
+        <StatusBar color={'transparent'} />
         <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header with Logo and Menu */}
         <View style={styles.header}>
           <Image
-            source={require('../assets/Logo/tiofydashboard.png')} // replace with your logo image
+            source={require('../assets/Logo/TiofyDashboard.png')} // replace with your logo image
             style={styles.logo}
           />
           <View style={styles.greetContainer}>
@@ -212,76 +242,56 @@ useEffect(() => {
             <TextInput
               placeholder="Search Here"
               style={styles.searchInput}
+              value={query}
+              onChangeText={setQuery} // Update query on input change
             />
             <Icon name="search" size={24} style={styles.searchIcon} />
           </View>
 
           {/* Slideshow Banner */}
-          <View style={{ alignItems: 'center', marginVertical: 10 }}>
-            <Carousel
-              data={carouselData}
-              renderItem={renderCarouselItem}
-              sliderWidth={width}
-              itemWidth={width * 0.8}
-              loop={true}
-              autoplay={true}
-              autoplayDelay={2000}
-              autoplayInterval={3000}
-              onSnapToItem={(index) => setActiveSlide(index)} // Update active slide index
-            />
-            <Pagination
-              dotsLength={carouselData.length}
-              activeDotIndex={activeSlide}
-              containerStyle={styles.paginationContainer}
-              dotStyle={styles.dotStyle}
-              inactiveDotStyle={styles.inactiveDotStyle}
-              inactiveDotOpacity={0.4}
-              inactiveDotScale={0.6}
-            />
-          </View>
+          {query.trim() === '' && (
+        <View style={{ alignItems: 'center', marginVertical: 10 }}>
+          <Carousel
+            data={carouselData}
+            renderItem={renderCarouselItem}
+            sliderWidth={width}
+            itemWidth={width * 0.8}
+            loop={true}
+            autoplay={true}
+            autoplayDelay={2000}
+            autoplayInterval={3000}
+            onSnapToItem={(index) => setActiveSlide(index)}
+          />
+          <Pagination
+            dotsLength={carouselData.length}
+            activeDotIndex={activeSlide}
+            containerStyle={styles.paginationContainer}
+            dotStyle={styles.dotStyle}
+            inactiveDotStyle={styles.inactiveDotStyle}
+            inactiveDotOpacity={0.4}
+            inactiveDotScale={0.6}
+          />
+        </View>
+      )}
 
-          {/* Categories */}
-          <Text style={styles.categoriesTitle}>Our Categories</Text>
-
-          <ScrollView 
-          horizontal
-          style={styles.categoriesContainer}>
-            <TouchableOpacity style={styles.categoryItem} onPress={() => { props.navigation.push('FoodDashboard') }}>
-               <Image 
-    source={require('../assets/Food.png')} // Replace with your image path
-    style={styles.categoryImage}
-  />
-              <Text style={styles.categoryText}>Food</Text>
+           {/* Categories */}
+      <Text style={styles.categoriesTitle}>Our Categories</Text>
+      <ScrollView horizontal style={styles.categoriesContainer}>
+        {filteredCategories.length > 0 ? (
+          filteredCategories.map((category, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.categoryItem}
+              onPress={() => props.navigation.push(category.route)}
+            >
+              <Image source={category.image} style={styles.categoryImage} />
+              <Text style={styles.categoryText}>{category.name}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryItem} onPress={() => {props.navigation.push('HotelDashboard')}}>
-                <Image 
-    source={require('../assets/Hotel.png')} // Replace with your image path
-    style={styles.categoryImage}
-  />
-              <Text style={styles.categoryText}>Hotel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryItem} onPress={() => { props.navigation.push('CyrDashboard') }}>
-               <Image 
-    source={require('../assets/cab.png')} // Replace with your image path
-    style={styles.categoryImage}
-  />
-              <Text style={styles.categoryText}>Auto&Cab</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryItem}>
-              <Image 
-    source={require('../assets/Saloon.png')} // Replace with your image path
-    style={styles.categoryImage}
-  />
-              <Text style={styles.categoryText}>Laundry</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryItem}>
-            <Image 
-    source={require('../assets/vegetable.png')} // Replace with your image path
-    style={styles.categoryImage}
-  />
-              <Text style={styles.categoryText}>Liquor</Text>
-            </TouchableOpacity>
-          </ScrollView>
+          ))
+        ) : (
+          <Text style={{color:'white', fontWeight:'bold', marginHorizontal:20}}>No categories match your search.</Text>
+        )}
+      </ScrollView>
 
           {/* Discounts & Offers */}
           {
@@ -306,7 +316,7 @@ useEffect(() => {
                             style={styles.offerImage}
                             resizeMode="cover"
                           />
-                          <Text style={styles.offerText}>{offer.title}</Text>
+                          {/* <Text style={styles.offerText}>{offer.title}</Text> */}
                         </View>
                       );
                     })}
@@ -339,13 +349,13 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#5ecdf9',
+    backgroundColor: 'white',
     borderRadius: 20,
     paddingHorizontal: 10,
     marginTop: 10,
     width: '90%',
     marginLeft: '5%',
-    borderColor: '#5ecdf9',
+    borderColor: '#9f0d91',
     borderWidth: 2
 },
 searchInput: {
@@ -353,18 +363,18 @@ searchInput: {
     fontSize: 16,
     paddingVertical: 8,
     paddingLeft: 10, // Add padding to the left to avoid text being too close to the edge
-    color: 'white',
+    color: 'black',
 },
 searchIcon: {
     padding: 5,
-    backgroundColor: '#5ecdf9',
-    color: "white",
+    backgroundColor: '#ffff00',
+    color: "black",
     borderRadius: 20,
 },
   categoriesTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'black',
+    color: 'white',
     marginLeft: 20,
     marginVertical: 10,
   },
@@ -380,16 +390,17 @@ searchIcon: {
     margin: 5,  // Space around each item
     borderWidth: 2,
     borderRadius: 15,
-    borderColor: '#5ecdf9',
+    borderColor: '#ffff00',
+    backgroundColor: '#9f0d91'
   },
    categoryImage: {
     width: 70, 
-    height: 90, 
-    borderRadius: 50,
+    height: 90,
+    borderRadius: 15,
   },
   categoryText: {
     marginTop: 5,
-    color: 'black',
+    color: 'white',
     fontWeight: 'bold'
   },
   bottomNavigation: {
@@ -401,6 +412,8 @@ searchIcon: {
   },
   carouselItem: {
     borderRadius: 20,
+      borderWidth: 1,
+    borderColor: 'white',
     overflow: 'hidden',
     height: 150,
     justifyContent: 'center',
@@ -427,7 +440,7 @@ searchIcon: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#5ecdf9',
+    backgroundColor: 'white',
   },
   inactiveDotStyle: {
     backgroundColor: '#C4C4C4',
@@ -435,7 +448,7 @@ searchIcon: {
   offersTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'black',
+    color: 'white',
     marginLeft: 20,
     marginVertical: 10,
   },
@@ -449,7 +462,7 @@ searchIcon: {
     marginRight: 20,
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#5ecdf9',
+    backgroundColor: '#9f0d91',
     padding: 5,
   },
   offerImage: {
@@ -468,7 +481,7 @@ searchIcon: {
   greetingText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'crimson',
+    color: '#ffff00',
     
   },
 });

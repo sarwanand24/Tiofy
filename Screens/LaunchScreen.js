@@ -44,7 +44,7 @@ function LaunchScreen(props) {
   const fetchData = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Wait for 3 seconds
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for 3 seconds
       
       if (locationEnabled) { // Proceed only if location is enabled
         if (token) {

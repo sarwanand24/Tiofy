@@ -187,12 +187,12 @@ const CyrMapDirection = (props) => {
           title={'User'}
           description={'Location of the destination'}
         >
-          <Image source={require('../../assets/person.png')} style={styles.markerImage} />
+          <Image source={require('../../assets/location.webp')} style={styles.markerImage} />
         </Marker>
         {routeCoordinates.length > 0 && (
           <Polyline
             coordinates={routeCoordinates}
-            strokeColor="blue"
+            strokeColor="#68095f"
             strokeWidth={5}
           />
         )}
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   detailsBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#5ecdf9',
+    backgroundColor: '#68095f',
     padding: 10,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20
@@ -282,16 +282,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: 'pink',
+    backgroundColor: '#9f0d91',
     alignItems: 'center',
     borderRadius: 20
   },
   infoText: {
     fontSize: 16,
     paddingHorizontal: 10,
+    color: 'white'
   },
   rating: {
-    backgroundColor: '#b0c4de', // Clay blue background color
+    backgroundColor: '#68095f', // Clay blue background color
     padding: 20,               // Padding around the entire container
     borderRadius: 10,                // Margin around the container      
   },

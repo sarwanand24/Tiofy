@@ -14,7 +14,7 @@ const Cart = (props) => {
         const jsonValue = await AsyncStorage.getItem('cartData');
         setCartData(jsonValue != null ? JSON.parse(jsonValue) : null);
       } catch (error) {
-        console.error('Error fetching cart data:', error);
+        console.log('Error fetching cart data:', error);
       }
     };
 
@@ -45,8 +45,8 @@ const Cart = (props) => {
           ))}
 
           <TouchableOpacity style={styles.cartBtn} onPress={handleProceedToCart}>
-            <Text style={{ color: 'black', fontWeight: '700', fontSize: 16 }}>Proceed to Cart
-              <Icon name="arrow-right" size={15} color="black" />
+            <Text style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>Proceed to Cart
+              <Icon name="arrow-right" size={15} color="white" />
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -62,33 +62,33 @@ const Cart = (props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#68095f',
     padding: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: '#333',
+    color: '#ffff00',
   },
   subtitle: {
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 10,
-    color: '#555',
+    color: 'white',
   },
   itemText: {
     fontSize: 18,
     marginBottom: 8,
-    color: '#444',
+    color: 'white',
   },
   foodItemText: {
     fontSize: 16,
     marginBottom: 6,
-    color: '#666',
+    color: 'white',
   },
   cartBtn: {
-    backgroundColor: '#E1F5FE',
+    backgroundColor: '#9f0d91',
     padding: 15,
     borderRadius: 30,
     flexDirection: 'row',
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 20,
-    color: '#555',
+    color: 'white',
   },
 });
 

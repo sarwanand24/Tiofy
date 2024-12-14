@@ -13,7 +13,7 @@ const OrderHistory = (props) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => props.navigation.push('CabOrderHistory')}
+        onPress={() => props.navigation.push('CyrOrderHistory')}
       >
         <Text style={styles.buttonText}>Cab Booking History</Text>
       </TouchableOpacity>
@@ -30,7 +30,7 @@ const OrderHistory = (props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8', // Snow white background
+    backgroundColor: '#68095f', // Snow white background
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -38,10 +38,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 40,
-    color: '#333',
+    color: '#ffff00',
   },
   button: {
-    backgroundColor: '#FFF', // White button background
+    backgroundColor: '#9f0d91', // White button background
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 10,
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 18,
-    color: '#333',
+    color: 'white',
   },
 });
 

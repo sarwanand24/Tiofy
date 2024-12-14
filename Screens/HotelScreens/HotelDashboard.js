@@ -1,47 +1,63 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
     Dimensions, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
-    Image
+    Image,
+    ImageBackground
 } from 'react-native';
 import Icon from "react-native-vector-icons/FontAwesome6";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import carousel from './images/Carousel';
+import axios from 'axios';
 import HotelLoader from './HotelLoader';
 
 const { width, height } = Dimensions.get('window');
 
 function HotelDashboard(props) {
 
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const flatListRef = useRef(null);
     const [query, setQuery] = useState('');
+    const [allHotelsCity, setAllHotelsCity] = useState([]);
     const [allHotels, setAllHotels] = useState([]);
-    const [searchedHotels, setSearchedHotels] = useState([]);
+    const [filteredHotels, setFilteredHotels] = useState([]);
     const [loading, setloading] = useState(false);
     const [slideshow, setSlideshow] = useState(false);
+    const [festiveImg, setFestiveImg] = useState('');
 
-
+    // Fetch all hotels from the backend
     useEffect(() => {
-        if (slideshow) {
-            const interval = setInterval(() => {
-                const nextIndex =
-                    currentIndex === carousel.length - 1 ? 0 : currentIndex + 1;
-                setCurrentIndex(nextIndex);
-                flatListRef.current.scrollToIndex({
-                    animated: true,
-                    index: nextIndex,
-                });
-            }, 2000);
+        const fetchHotels = async () => {
+            try {
+                const response = await fetch('https://trioserver.onrender.com/api/v1/users/getAllHotels');
+                const data = await response.json();
+                if (data.success) {
+                    console.log('rani rani', data.hotels)
+                    setAllHotels(data.hotels); // Assuming backend sends { success: true, hotels: [...] }
+                    setFilteredHotels(data.hotels);
+                }
+            } catch (error) {
+                console.log('Error fetching hotels:', error);
+            }
+        };
 
-            return () => clearInterval(interval);
+        fetchHotels();
+    }, []);
+
+    // Filter hotels based on the search query
+    useEffect(() => {
+        if (query.trim()) {
+          const results = allHotels.filter(
+            (hotel) =>
+              hotel.hotelName.toLowerCase().includes(query.toLowerCase()) ||
+              hotel.city.toLowerCase().includes(query.toLowerCase())
+          );
+          setFilteredHotels(results);
+        } else {
+          setFilteredHotels([]); // Clear filteredHotels when no query
         }
-    }, [currentIndex, slideshow]);
+      }, [query]);
 
-    const fetchAllHotels = async () => {
+    const fetchAllHotelsCity = async () => {
         setloading(true);
         setSlideshow(false)
-        await fetch("https://trioserver.onrender.com/api/v1/users/getAllHotels", {
+        await fetch("https://trioserver.onrender.com/api/v1/users/getAllHotelsCity", {
             method: "GET",
             headers: {
                 'Content-Type': 'application/json'
@@ -52,7 +68,7 @@ function HotelDashboard(props) {
                 try {
                     console.log(data.data);
                     if (data) {
-                        setAllHotels(data.data);
+                        setAllHotelsCity(data.data);
                         const timestamp = new Date().getTime();
                         await AsyncStorage.setItem('allHotel', JSON.stringify({ data: data.data, timestamp: timestamp }));
                         setSlideshow(true);
@@ -84,15 +100,15 @@ function HotelDashboard(props) {
                 // Check if data is expired
                 if (!isDataExpired(timestamp, expirationTime)) {
                     // Data is not expired, set it in state
-                    setAllHotels(data);
+                    setAllHotelsCity(data);
                     setSlideshow(true);
                 } else {
                     // Data is expired, fetch fresh data
-                    fetchAllHotels();
+                    fetchAllHotelsCity();
                 }
             } else {
                 // No stored data found, fetch fresh data
-                fetchAllHotels();
+                fetchAllHotelsCity();
             }
         } catch (error) {
             console.error('Error loading stored data:', error);
@@ -104,50 +120,72 @@ function HotelDashboard(props) {
         getStoredData();
     }, []);
 
-    const renderItem = ({ item, index }) => (
-        <Image
-            source={item.image}
-            style={styles.carousel}
-            resizeMode="cover"
-        />
-    );
-
-    const renderDot = (index) => (
-        <TouchableOpacity
-            key={index}
-            onPress={() => {
-                flatListRef.current.scrollToIndex({ animated: true, index });
-                setCurrentIndex(index);
-            }}
-            style={[styles.dot, currentIndex === index && styles.activeDot]}
-        />
-    );
-
-    // const bgColors = ['violet', 'skyblue', 'pink', 'lightgreen', 'violet', 'orange', 'pink', 'yellow', 'red', 'blue', 'green', 'violet', 'orange', 'pink'];
-    const getRandomColor = () => {
-        const letters = '0123456789ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * 16)];
-        }
-        return color;
+    const cityImages = {
+        "Kolkata": require('../../assets/Kolkata.jpg'),
+        "Bhubneshwar": require('../../assets/Bhubaneshwar.jpg'),
+        "Puri": require('../../assets/Puri.jpg'),
+        "Delhi": require('../../assets/Delhi.png'),
+        "Mumbai": require('../../assets/Kolkata.jpg'),
+        "Mayong": require('../../assets/Kolkata.jpg'),
     };
 
+
     const renderMarque = ({ item }) => {
-        const randomBgColor = getRandomColor();
-    
+        const cityImage = cityImages[item._id]; // Get the image for the city
+
         return (
-            <TouchableOpacity onPress={() => { props.navigation.push("Hotel", { city: item._id, coupleStay: false, familyStay: false }) }}>
-                <View style={[styles.marque, { backgroundColor: randomBgColor }]}>
-                    <Text style={styles.itemName}>{item._id}</Text>
-                </View>
-            </TouchableOpacity>
+            <View style={styles.cloud}>
+                <TouchableOpacity
+                    onPress={() => {
+                        props.navigation.push("Hotel", { city: item._id, coupleStay: false, familyStay: true });
+                    }}
+                >
+                    <View style={styles.marque}>
+                        {cityImage ? (
+                            <View style={styles.cityContainer}>
+                                <Image source={cityImage} style={styles.cityImage} />
+                                <Text style={styles.itemName}>{item._id}</Text>
+                            </View>
+                        ) : (
+                            <View style={styles.cityContainer}>
+                                <View style={styles.defaultImage}>
+                                    <Text style={styles.defaultText}>{item._id[0]}</Text>
+                                </View>
+                                <Text style={styles.itemName}>{item._id}</Text>
+                            </View>
+                        )}
+                    </View>
+                </TouchableOpacity>
+            </View>
         );
     };
 
-    const handleSearch = async () => {
-     //handle search function if any
-    }
+    useEffect(() => {
+        const fetchOffersData = async () => {
+            try {
+                const response2 = await axios.get('https://trioserver.onrender.com/api/v1/users/hotel-dashboard-images');
+                setFestiveImg(response2.data[0]?.imageUrl)
+            } catch (error) {
+                console.error('Error fetching offers data', error);
+            }
+        };
+
+        fetchOffersData();
+    }, []);
+
+    const renderHotel = ({ item }) => (
+        <TouchableOpacity
+            style={styles.hotelCard}
+            onPress={()=>{props.navigation.push("HotelCart", {hotel: item, coupleStay: false, familyStay: true})}}
+        >
+            <Image source={{ uri: item.hotelPhoto }} style={styles.hotelImage} />
+            <View style={styles.hotelInfo}>
+                <Text style={styles.hotelName}>{item.hotelName}</Text>
+                <Text style={styles.hotelCity}>{item.city}</Text>
+                <Text style={styles.hotelPrice}>Price: ₹{item.price}</Text>
+            </View>
+        </TouchableOpacity>
+    );
 
     if (loading) {
         return (
@@ -156,46 +194,36 @@ function HotelDashboard(props) {
     }
 
     return (
-        <ScrollView style={{ backgroundColor: 'white' }}>
-            <View style={{height: height/2}}>
-                <View style={styles.slideshow}>
-                    <FlatList
-                        ref={flatListRef}
-                        horizontal
-                        data={carousel}
-                        renderItem={renderItem}
-                        keyExtractor={(item, index) => index.toString()}
-                        pagingEnabled
-                        showsHorizontalScrollIndicator={false}
-                        onScroll={(event) => {
-                            const slideIndex = Math.ceil(
-                                event.nativeEvent.contentOffset.x / width
-                            );
-                            setCurrentIndex(slideIndex);
-                        }}
-                        onScrollToIndexFailed={(info) => {
-                            console.warn('onScrollToIndexFailed info:', info);
-                        }}
+        <ScrollView style={{ backgroundColor: '#68095f' }}>
+            <View style={{ height: height / 2 }}>
+                {festiveImg && (
+                    <Image
+                        source={{ uri: festiveImg.replace('http://', 'https://') }}
+                        style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
                     />
-                    <View style={styles.dotsContainer}>
-                        {carousel.map((_, index) => renderDot(index))}
-                    </View>
-                </View>
-
+                )}
                 <View style={styles.container2}>
                     <TextInput
                         style={styles.searchbar}
                         value={query}
                         onChangeText={setQuery}
-                        onSubmitEditing={handleSearch}
                     />
-                    <Icon name="magnifying-glass" size={24} color="black" style={styles.searchicon} />
+                    <Icon name="magnifying-glass" size={20} color="black" style={styles.searchicon} />
                 </View>
             </View>
 
+            {query.trim() && (
+                <FlatList
+                    data={filteredHotels}
+                    renderItem={renderHotel}
+                    keyExtractor={(item) => item._id}
+                    showsHorizontalScrollIndicator={false}
+                />
+            )}
+
             <FlatList
                 horizontal
-                data={allHotels}
+                data={allHotelsCity}
                 renderItem={renderMarque}
                 bounces={false}
                 keyExtractor={(item, index) => index.toString()}
@@ -203,18 +231,21 @@ function HotelDashboard(props) {
             />
 
             <View style={styles.blockContainer}>
+
                 <TouchableOpacity
-                    onPress={()=>{props.navigation.push("CityNames", { flatStay: false, coupleStay: true, familyStay: false })}}
-                    style={[styles.box, { width: width / 3, height: width / 3}]}>
-                    <Image source={require("../../assets/Hotel.png")} style={{ width: width / 3, height: width / 3 }} />
-                    <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '700', color: 'black' }}>Couple's Stay</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={()=>{props.navigation.push("CityNames", { flatStay: false, coupleStay: false, familyStay: true })}}
+                    onPress={() => { props.navigation.push("CityNames", { flatStay: false, coupleStay: true, familyStay: false }) }}
                     style={[styles.box, { width: width / 3, height: width / 3 }]}>
-                    <Image source={require("../../assets/Hotel.png")} style={{ width: width / 3, height: width / 3 }} />
-                    <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '700', color: 'black' }}>Family Stay</Text>
+                    <Image source={require("../../assets/couplestay.png")} style={{ width: width / 3, height: width / 3, borderRadius: 20 }} />
+                    <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '700', color: 'white' }}>Couple's Stay</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={() => { props.navigation.push("CityNames", { flatStay: false, coupleStay: false, familyStay: true }) }}
+                    style={[styles.box, { width: width / 3, height: width / 3 }]}>
+                    <Image source={require("../../assets/familystay.png")} style={{ width: width / 3, height: width / 3, borderRadius: 20 }} />
+                    <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '700', color: 'white' }}>Family Stay</Text>
+                </TouchableOpacity>
+
                 {/* <TouchableOpacity style={{ width: width / 3, height: width / 3 }}>
                     <Image source={require("../../assets/Login.png")} />
                     <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '700' }}>Personal Stay</Text>
@@ -223,12 +254,13 @@ function HotelDashboard(props) {
                     <Image source={require("../../assets/Login.png")} />
                     <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '700' }}>Wedding Stay</Text>
                 </TouchableOpacity> */}
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     onPress={()=>{props.navigation.push("CityNames", { flatStay: true, coupleStay: false, familyStay: false })}}
                     style={[styles.box, { width: width / 3, height: width / 3 }]}>
                     <Image source={require("../../assets/Hotel.png")} style={{ width: width / 3, height: width / 3 }} />
                     <Text style={{ textAlign: 'center', fontSize: 16, fontWeight: '700', color: 'black' }}>Flat's Stay</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
+
             </View>
 
         </ScrollView>
@@ -250,52 +282,23 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     searchbar: {
-        width: width / 1.3,
+        width: '80%',
         backgroundColor: 'white',
         borderRadius: 20,
-        padding: 13
+        padding: 6,
+        color: 'black'
     },
     searchicon: {
         position: 'absolute',
-        right: width / 15
+        right: '25%'
     },
     container2: {
         flexDirection: 'row',
         alignItems: 'center',
-        width: width / 1.3,
+        width: '100%',
         position: 'absolute',
-        top: 70,
-        left: (width * 3) / 26
-    },
-    dotsContainer: {
-        position: 'absolute',
-        bottom: 10,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        width,
-    },
-    dot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: 'white',
-        marginHorizontal: 5,
-    },
-    activeDot: {
-        backgroundColor: 'red',
-    },
-    marque: {
-        width: width / 5,
-        height: width / 5,
-        borderRadius: 50,
-        marginHorizontal: 20,
-        justifyContent: 'center'
-    },
-    itemName: {
-        color: 'white',
-        textAlign: 'center',
-        fontSize: 14,
-        fontWeight: '700'
+        top: 25,
+        left: '10%'
     },
     blockContainer: {
         flexDirection: 'row',
@@ -303,14 +306,75 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         justifyContent: 'space-evenly',
         padding: 10,
+        marginTop: 25
     },
     box: {
-        borderRadius: 10,
+        borderRadius: 15,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 30,
         marginHorizontal: 25
-    }
+    },
+    marque: {
+        alignItems: 'center',
+        marginHorizontal: 10
+    },
+    cityContainer: {
+        alignItems: 'center',
+    },
+    cityImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 40, // Makes the image circular
+        marginBottom: 8,
+    },
+    defaultImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#9f0d91',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    defaultText: {
+        fontSize: 24,
+        color: '#fff',
+    },
+    itemName: {
+        fontSize: 16,
+        color: 'white',
+        textAlign: 'center',
+    },
+    hotelCard: {
+        flexDirection: 'row',
+        margin: 10,
+        backgroundColor: '#9f0d91',
+        borderRadius: 10,
+        overflow: 'hidden',
+        elevation: 3,
+      },
+      hotelImage: {
+        width: 100,
+        height: 100,
+      },
+      hotelInfo: {
+        padding: 10,
+        flex: 1,
+        justifyContent: 'center',
+      },
+      hotelName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#ffff00',
+      },
+      hotelCity: {
+        color: 'white',
+      },
+      hotelPrice: {
+        color: 'white',
+        fontWeight: 'bold',
+      },
 })
 
 export default HotelDashboard

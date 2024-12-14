@@ -129,12 +129,12 @@ function Hotel(props) {
         style={styles.container}>
             <Image
                 source={{ uri: item.hotelPhoto }}
-                style={{ width: width - 30, height: width, borderRadius: 20 }}
+                style={{ width: width - 30, height: 200, borderRadius: 20 }}
                 resizeMode="cover"
             />
-            <Text style={{ fontSize: 25, color: 'black', fontWeight: '700', marginLeft: 10, marginTop: 5 }}>{item.hotelName}</Text>
-            <Text style={{ fontSize: 16, color: 'black', fontWeight: '600', marginLeft: 10, width: width / 2 }}>{item.address}</Text>
-            <Text style={{ fontSize: 16, color: 'black', fontWeight: '600', marginLeft: 10, width: width / 2 }}>Rs {item.price}</Text>
+            <Text style={{ fontSize: 25, color: 'white', fontWeight: '700', marginLeft: 10, marginTop: 5 }}>{item.hotelName}</Text>
+            <Text style={{ fontSize: 16, color: 'white', fontWeight: '600', marginLeft: 10, width: width / 2 }}>{item.address}</Text>
+            <Text style={{ fontSize: 16, color: 'white', fontWeight: '600', marginLeft: 10, width: width / 2 }}>Rs {item.price}</Text>
         </TouchableOpacity>
     );
 
@@ -145,16 +145,16 @@ function Hotel(props) {
     }
 
     return (
-        <View style={{ padding: 15, marginBottom: 30 }}>
-            <Text style={{ fontSize: 20, color: 'black', fontWeight: '800', textAlign: 'center', padding: 10 }}>{city}</Text>
+        <View style={{ flex: 1, padding: 15, marginBottom: 30, backgroundColor:'#68095f' }}>
+            <Text style={{ fontSize: 20, color: '#ffff00', fontWeight: '800', textAlign: 'center', padding: 10 }}>{city}</Text>
             {state.msg && (
                 <View>
                     <Text
-                        style={{ textAlign: 'center', fontSize: 16, fontWeight: '700', color: 'black' }}>
+                        style={{ textAlign: 'center', fontSize: 16, fontWeight: '700', color: 'white' }}>
                        Sorry, It's Not You It's Us!
                     </Text>
                     <Text
-                        style={{ textAlign: 'center', fontSize: 16, fontWeight: '700', color: 'black' }}>
+                        style={{ textAlign: 'center', fontSize: 16, fontWeight: '700', color: 'white' }}>
                         We Don't Serve {state.title} In this City
                     </Text>
                 </View>
@@ -170,7 +170,7 @@ function Hotel(props) {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: "pink",
+        backgroundColor: "#9f0d91",
         borderRadius: 20,
         marginTop: 10,
         paddingBottom: 15

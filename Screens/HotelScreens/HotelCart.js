@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
+import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking, Alert } from 'react-native';
 import Icon from "react-native-vector-icons/FontAwesome6";
-import { Calendar } from 'react-native-calendars';
+import CalendarPicker from 'react-native-calendar-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RazorpayCheckout from 'react-native-razorpay';
 import HotelLoader from './HotelLoader';
 import HotelRatingSummary from './HotelRatingSummary';
+import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get("window");
 
@@ -63,103 +64,120 @@ function HotelCart(props) {
     const [availableTimeSlots, setAvailableTimeSlots] = useState({});
     const [laundryServiceAdded, setLaundryServiceAdded] = useState(false);
     const [roomPrice, setRoomPrice] = useState(0);
-    const [platformFee, setPlatformFee] = useState(5);
+    const [platformFee, setPlatformFee] = useState(15);
+    const [gst, setGst] = useState(12);
     const [selectedSlotTiming, setSelectedSlotTiming] = useState({});
     const [selectedSlotIndex, setSelectedSlotIndex] = useState(null);
 
-    const handleDayPress = (day) => {
+    const handleDayPress = (date) => {
+        console.log('dates--', date)
+        const dateString = date;
+      // Use dateString directly
+    
+       if(dateString) {
         if (!coupleStay) {
-            const { dateString } = day;
-            const currentDate = new Date(dateString);
-
             if (!startDate) {
-                // If start date is not set, set it
-                setStartDate(dateString);
+                setStartDate(dateString); // Set start date
             } else if (!endDate) {
-                // If end date is not set, set it
-                setEndDate(dateString);
+                setEndDate(dateString); // Set end date
             } else {
-                const diffToStart = Math.abs(new Date(startDate) - currentDate);
-                const diffToEnd = Math.abs(new Date(endDate) - currentDate);
-
+                // Calculate differences in days
+                const diffToStart = Math.abs(new Date(startDate) - new Date(dateString));
+                const diffToEnd = Math.abs(new Date(endDate) - new Date(dateString));
+    
                 if (diffToStart < diffToEnd) {
-                    // If the pressed date is closer to the start date, set it as the start date
-                    setStartDate(dateString);
+                    setStartDate(dateString); // Update start date
                 } else {
-                    // If the pressed date is closer to the end date, set it as the end date
-                    setEndDate(dateString);
+                    setEndDate(dateString); // Update end date
                 }
             }
-        }
-        else {
+        } else {
             if (selectedSlot) {
-                const formattedDate = new Date(day.dateString).toISOString().split('T')[0]; // Format selected date
-
-                // Update marked dates for single-day selection
+                // Directly use dateString for single date selection
                 const updatedMarkedDates = {
-                  [formattedDate]: { selected: true, marked: true, selectedColor: 'crimson' }
+                    [dateString]: { selected: true, marked: true, selectedColor: 'crimson' },
                 };
-            
-                // Update bookedDates and stayLength
-                const updatedBookingDates = { [formattedDate]: true };
+    
+                const updatedBookingDates = { [dateString]: true };
                 setBookedDates(updatedBookingDates);
                 setStayLength(Object.keys(updatedBookingDates).length);
                 setMarkedDates(updatedMarkedDates);
             } else {
-                alert("Please select a time slot first");
+                Alert.alert("Please select a time slot first");
             }
         }
+       }
     };
-
+    
     const markDatesInRange = () => {
         if (!startDate || !endDate) return;
     
         const marked = {};
         const bookingDates = {};
-        let currentDate = new Date(startDate).setHours(0, 0, 0, 0);
-        const endDateObj = new Date(endDate).setHours(0, 0, 0, 0);
+    
+        // Use `dateString` directly for accurate date marking
+        let currentDate = new Date(startDate);
+        const endDateObj = new Date(endDate);
     
         while (currentDate <= endDateObj) {
-            const formattedDate = new Date(currentDate).toISOString().split('T')[0];
+            const formattedDate = currentDate.toISOString().split('T')[0]; // Local date as ISO string
             marked[formattedDate] = {
                 selected: true,
                 marked: true,
                 selectedColor: 'crimson',
             };
             bookingDates[formattedDate] = true;
-            currentDate += 24 * 60 * 60 * 1000; // Move to next day
+    
+            // Move to next day
+            currentDate.setDate(currentDate.getDate() + 1);
         }
     
         setMarkedDates(marked);
         setBookedDates(bookingDates);
         setStayLength(Object.keys(bookingDates).length);
+    
         console.log("Length of Days", Object.keys(bookingDates).length);
         console.log("Marked Dates", marked);
     };
-    
+
+    const customDatesStyles = Object.keys(markedDates).map((dateString) => ({
+        date: new Date(dateString), // Convert to Date object
+        style: { backgroundColor: 'crimson' },
+        textStyle: { color: 'white' },
+    }));
+        
     // Use `useEffect` with dependency checks for `startDate` and `endDate` changes
     useEffect(() => {
         markDatesInRange();
     }, [startDate, endDate]);
     
-
-    useEffect(()=>{
-        let finalPrice = hotel.price; // Default price for general bookings
-
+    useEffect(() => {
+        const pricing = async () => {
+            const response2 = await fetch('https://trioserver.onrender.com/api/v1/users/get-all-fees');
+            const data2 = await response2.json();
+            
+            const newPlatformFee = data2?.convinientFee || platformFee;
+            const newGst = data2?.hotelGst || gst;
+            const newPrice = calculatePrice(person, hotel, stayLength, selectedSlot);
+    
+            // Update only if values have changed
+            if (newPlatformFee !== platformFee) setPlatformFee(newPlatformFee);
+            if (newGst !== gst) setGst(newGst);
+            if (newPrice !== roomPrice) setRoomPrice(newPrice);
+        };
+        pricing();
+    }, [person, hotel, stayLength, selectedSlot]);
+    
+    const calculatePrice = (person, hotel, stayLength, selectedSlot) => {
+        let finalPrice = hotel.price;
         if (coupleStay && selectedSlot) {
-            if (selectedSlot === 3) {
-                finalPrice = hotel.price3hr;
-            } else if (selectedSlot === 6) {
-                finalPrice = hotel.price6hr;
-            } else if (selectedSlot === 12) {
-                finalPrice = hotel.price12hr;
-            }
+            if (selectedSlot === 3) finalPrice = hotel.price3hr;
+            else if (selectedSlot === 6) finalPrice = hotel.price6hr;
+            else if (selectedSlot === 12) finalPrice = hotel.price12hr;
         }
-        
-        // Calculate the bill based on the selected price
-        const billAmount = Math.ceil(person / 2) * finalPrice * stayLength;
-        setRoomPrice(billAmount)
-    }, [person])
+        return Math.ceil(person / 2) * finalPrice * stayLength;
+    };
+    
 
     // Inside your slot selection handler
    
@@ -171,27 +189,26 @@ function HotelCart(props) {
   // Function to generate time slots based on the selected slot duration
   const generateTimeSlots = () => {
     const startHour = 7; // Start from 7 AM
-    const endHour = 31; // End at 7 AM the next day (24 + 7 = 31 to represent the next day's 7 AM)
+    const endHour = 31; // End at 7 AM the next day (24 + 7 = 31 for the next day's 7 AM)
     const slots = [];
 
     if (selectedSlot) {
-        let hour = startHour; // Start from the specified start hour
+        let hour = startHour;
         while (hour < endHour) {
             const start = formatTime(hour);
-            const end = formatTime(hour + selectedSlot); // Add selected slot duration to get the end time
+            const end = formatTime(hour + selectedSlot); // Calculate end time
 
-            // Ensure end doesn't go past 7 AM next day
-            console.log('rani', start, end)
+            // Ensure the end doesn't exceed 7 AM the next day
             if (hour + selectedSlot <= endHour) {
-                slots.push({ start, end });
-                hour += selectedSlot; // Move to the next starting time
+                slots.push({ start, end }); // Add to the slots list
+                hour += selectedSlot; // Move to the next time slot
             } else {
-                break; // Stop the loop if the time exceeds the 7 AM of the next day
+                break; // Stop if the slot exceeds the end hour
             }
         }
     }
 
-    setAvailableTimeSlots(slots); // Set the available time slots
+    return slots; // Return generated slots instead of directly updating state
 };
 
 // Helper function to format time in 12-hour AM/PM format
@@ -207,11 +224,12 @@ const formatTime = (hour) => {
 };
     
     //   Update available slots whenever the selected slot changes
-      useEffect(() => {
-        generateTimeSlots();
-        console.log('availableSlots:', availableTimeSlots)
-      }, [selectedSlot]);
-    
+    useEffect(() => {
+        const newSlots = generateTimeSlots();
+        if (JSON.stringify(newSlots) !== JSON.stringify(availableTimeSlots)) {
+            setAvailableTimeSlots(newSlots); // Update only if different
+        }
+    }, [selectedSlot]);    
 
     //------------------------------- Payment Integration --------------------------------
 
@@ -245,7 +263,7 @@ const formatTime = (hour) => {
                                   'Content-Type': 'application/json',
                               },
                               body: JSON.stringify({
-                                  fromLocation: 'home', // Assuming static value or modify as needed
+                                  fromLocation: selectedLaundryShop?.address || 'home', // Assuming static value or modify as needed
                                   toLocation: hotel.address // Hotel address
                               })
                           });
@@ -259,7 +277,8 @@ const formatTime = (hour) => {
                   'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                  "bill": roomPrice,
+                  "bill": roomPrice + platformFee + Math.ceil((gst/100)*(roomPrice + platformFee)),
+                  "savings": platformFee + Math.ceil((gst/100)*(roomPrice + platformFee)),
                   "totalPerson": person,
                   "rooms": Math.ceil(person / 2),
                   "dates": bookedDates,
@@ -271,10 +290,11 @@ const formatTime = (hour) => {
           .then(async (data) => {
               console.log(data);
               if (data.data) {
-                  alert("Booking Confirmed!!!");
+                  setLoading(false);
+                  props.navigation.pop(3);
                   props.navigation.replace('HotelDashboard');
               } else {
-                  alert("Booking Failed!!!");
+                  Alert.alert("Booking Failed!!!");
               }
           });
                   }
@@ -314,7 +334,7 @@ const formatTime = (hour) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    amount: roomPrice + platformFee, // Example amount in INR (Rupees)
+                    amount: roomPrice + platformFee + (gst/100)*(roomPrice + platformFee), // Example amount in INR (Rupees)
                 }),
             });
             setLoading(false);
@@ -406,18 +426,18 @@ const formatTime = (hour) => {
         console.log("Userdata", Userdata._id, hotel._id);
         setLoading(true);
         try {
-            console.log('checkin done')
+            console.log('checkin done', hotel)
             if(hotel.roomsAvailable >= (Math.ceil(person / 2))){
                 if (selectedLaundryShop) {
                     // API call to create a laundry order
-                    console.log('checkin done for laundry')
+                    console.log('checkin done for laundry', selectedLaundryShop?.address)
                     await fetch(`https://trioserver.onrender.com/api/v1/laundryOrder/placeOrder/${65 + "fdc50e778b1f945a8f4573"}/${selectedLaundryShop._id}/${Userdata._id}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            fromLocation: 'home', // Assuming static value or modify as needed
+                            fromLocation: selectedLaundryShop?.address || 'home', // Assuming static value or modify as needed
                             toLocation: hotel.address // Hotel address
                         })
                     });
@@ -425,14 +445,14 @@ const formatTime = (hour) => {
                     console.log('checkout done for laundry')
                 }
               // Determine the appropriate price based on coupleStay and selectedSlot
-    
     const response = await fetch(`https://trioserver.onrender.com/api/v1/hotelOrder/placeOrder/${Userdata._id}/${hotel._id}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            "bill": roomPrice,
+            "bill": roomPrice + platformFee + Math.ceil((gst/100)*(roomPrice + platformFee)),
+            "savings": platformFee + Math.ceil((gst/100)*(roomPrice + platformFee)),
             "totalPerson": person,
             "rooms": Math.ceil(person / 2),
             "dates": bookedDates,
@@ -444,15 +464,15 @@ const formatTime = (hour) => {
     .then(async (data) => {
         console.log('check dataaaaa rani', data);
         if (data.data) {
-            alert("Booking Confirmed!!!");
+            props.navigation.pop(3);
             props.navigation.replace('HotelDashboard');
         } else {
-            alert("Booking Failed!!!");
+            Alert.alert("Booking Failed!!!");
         }
     });
             }
             else{
-                console.log(`Sorry we have only ${hotel.roomsAvailable} rooms available, and are short of ${(Math.ceil(person / 2))-hotel.roomsAvailable} rooms`);
+                Alert.alert(`Sorry we have only ${hotel.roomsAvailable} rooms available, and are short of ${(Math.ceil(person / 2))-hotel.roomsAvailable} rooms`);
             }
         }
         catch (error) {
@@ -462,16 +482,19 @@ const formatTime = (hour) => {
 
     if(loading){
        return (
-        <HotelLoader />
+        <View style={styles.loading}>
+           <LottieView source={require('../../assets/Animations/confirmation.json')}
+           style={styles.lottie} autoPlay loop />
+        </View>
        )
     }
 
     return (
-        <ScrollView>
+        <ScrollView style={{flex:1, backgroundColor:'#68095f'}}>
             <View>
                 <Image source={{ uri: hotel.hotelPhoto }} style={{ widht: width, height: height / 2.3 }} />
             </View>
-            <Text style={{ color: 'black', textAlign: 'center', fontSize: 20, fontWeight:'700' }}>
+            <Text style={{ color: '#ffff00', textAlign: 'center', fontSize: 20, fontWeight:'700' }}>
                 {hotel.hotelName}
             </Text>
 
@@ -484,23 +507,23 @@ const formatTime = (hour) => {
                         color={star <= Math.floor(hotel.ratings) ? '#FFD700' : '#D3D3D3'}
                     />
                 ))}
-                <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>{'\u00A0'}{'\u00A0'}{Math.floor(hotel.ratings)}</Text>
+                <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>{'\u00A0'}{'\u00A0'}{Math.floor(hotel.ratings)}</Text>
             </View>
 
-            <Text style={{ color: 'black', fontSize: 14, fontWeight: '500', marginLeft: 8 }}>{hotel.address}</Text>
+            <Text style={{ color: 'white', fontSize: 14, fontWeight: '500', marginLeft: 8 }}>{hotel.address}</Text>
 
             <TouchableOpacity onPress={() => { openGoogleMaps(hotel.latitude, hotel.longitude) }}>
-                <Text style={{ color: 'blue', fontSize: 14, fontWeight: '500', fontStyle: 'italic', marginLeft: 8 }}>View on map</Text>
+                <Text style={{ color: '#ffff00', fontSize: 14, fontWeight: '500', fontStyle: 'italic', marginLeft: 8 }}>View on map</Text>
             </TouchableOpacity>
 
          {hotel.facilities && (
                <View style={{padding:15}}>
-               <Text style={{ color: "black", fontWeight: '800', fontSize: 16, marginVertical: 8 }}>Other Key Offerings</Text>
+               <Text style={{ color: "white", fontWeight: '800', fontSize: 16, marginVertical: 8 }}>Other Key Offerings</Text>
                 {/* Map over facilities array to display each item as a bullet point */}
      {hotel?.facilities?.map((facility, index) => (
        <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 4 }}>
-         <Text style={{ fontSize: 16, color: "black" }}>•</Text>
-         <Text style={{ fontSize: 16, color: "black", marginLeft: 8 }}>{facility}</Text>
+         <Text style={{ fontSize: 16, color: "white" }}>•</Text>
+         <Text style={{ fontSize: 16, color: "white", marginLeft: 8 }}>{facility}</Text>
        </View>
      ))}
         </View>
@@ -509,41 +532,41 @@ const formatTime = (hour) => {
 
             {coupleStay && (
                 <View style={{ padding: 8 }}>
-                    <Text style={{ color: "black", fontWeight: '800', fontSize: 16, marginVertical: 8 }}>Book a slot</Text>
+                    <Text style={{ color: "white", fontWeight: '800', fontSize: 16, marginVertical: 8 }}>Book a slot</Text>
                     <View style={styles.slotContainer}>
                         <TouchableOpacity
                             onPress={() => { handleSlotSelection(3) }}>
-                            <View style={[styles.slotPress, (selectedSlot == 3) ? { backgroundColor: 'blue' } : null]}>
-                                <Text style={{ textAlign: 'center', color: selectedSlot === 3 ? 'white' : 'blue', fontWeight: '800', fontSize: 16 }}>3hr</Text>
+                            <View style={[styles.slotPress, (selectedSlot == 3) ? { backgroundColor: '#ffff00' } : null]}>
+                                <Text style={{ textAlign: 'center', color: selectedSlot === 3 ? 'black' : 'white', fontWeight: '800', fontSize: 16 }}>3hr</Text>
                             </View>
-                            <Text style={{ textAlign: 'center', color: 'black', fontSize: 16 }}>Rs 600</Text>
+                            <Text style={{ textAlign: 'center', color: 'white', fontSize: 16 }}>Rs{hotel?.price3hr}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => { handleSlotSelection(6) }}>
-                            <View style={[styles.slotPress, (selectedSlot == 6) ? { backgroundColor: 'blue' } : null]}>
-                                <Text style={{ textAlign: 'center', color: selectedSlot === 6 ? 'white' : 'blue', fontSize: 16, fontWeight: '800' }}>6hr</Text>
+                            <View style={[styles.slotPress, (selectedSlot == 6) ? { backgroundColor: '#ffff00' } : null]}>
+                                <Text style={{ textAlign: 'center', color: selectedSlot === 6 ? 'black' : 'white', fontSize: 16, fontWeight: '800' }}>6hr</Text>
                             </View>
-                            <Text style={{ textAlign: 'center', color: 'black', fontSize: 16 }}>Rs 800</Text>
+                            <Text style={{ textAlign: 'center', color: 'white', fontSize: 16 }}>Rs{hotel?.price6hr}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => { handleSlotSelection(12) }}>
-                            <View style={[styles.slotPress, (selectedSlot == 12) ? { backgroundColor: 'blue' } : null]}>
-                                <Text style={{ textAlign: 'center', color: selectedSlot === 12 ? 'white' : 'blue', fontSize: 16, fontWeight: '800' }}>12hr</Text>
+                            <View style={[styles.slotPress, (selectedSlot == 12) ? { backgroundColor: '#ffff00' } : null]}>
+                                <Text style={{ textAlign: 'center', color: selectedSlot === 12 ? 'black' : 'white', fontSize: 16, fontWeight: '800' }}>12hr</Text>
                             </View>
-                            <Text style={{ textAlign: 'center', color: 'black', fontSize: 16 }}>Rs 1200</Text>
+                            <Text style={{ textAlign: 'center', color: 'white', fontSize: 16 }}>Rs{hotel?.price12hr}</Text>
                         </TouchableOpacity>
                     </View>
 
                     {availableTimeSlots.length > 0 && (
   <ScrollView horizontal style={{ marginVertical: 10 }}>
-    <Text style={{ color: 'black', fontSize: 16, fontWeight: '700', marginBottom: 5 }}>Available Slots:</Text>
+    <Text style={{ color: 'white', fontSize: 16, fontWeight: '700', marginBottom: 5 }}>Available Slots:</Text>
     <View style={{ flexDirection: 'row', marginTop: 20 }}>
       {availableTimeSlots.map((slot, index) => (
         <TouchableOpacity
           key={index}
           style={{
             padding: 10,
-            backgroundColor: selectedSlotIndex === index ? '#5ecdf9' : '#e0e0e0',
+            backgroundColor: selectedSlotIndex === index ? '#9f0d91' : '#ffff00',
             marginHorizontal: 5,
             borderRadius: 5,
             borderWidth: 1,
@@ -554,7 +577,7 @@ const formatTime = (hour) => {
             setSelectedSlotTiming({ start: slot.start, end: slot.end });
           }}
         >
-          <Text style={{ textAlign: 'center', color: 'black', fontSize: 14 }}>
+          <Text style={{ textAlign: 'center', color: selectedSlotIndex === index ? 'white' : 'black', fontSize: 14 }}>
             {slot.start} - {slot.end}
           </Text>
         </TouchableOpacity>
@@ -563,74 +586,61 @@ const formatTime = (hour) => {
   </ScrollView>
 )}
 
-                    <Text style={{ color: "black", fontWeight: '800', fontSize: 16, marginVertical: 8 }}>Why Book This?</Text>
-                    <Text style={{ color: "black", fontWeight: '600', fontSize: 14, marginHorizontal: 8 }}>
-                        <Icon name='children' size={20} color='blue' style={{ marginRight: 5 }} />
+                    <Text style={{ color: "white", fontWeight: '800', fontSize: 16, marginVertical: 8 }}>Why Book This?</Text>
+                    <Text style={{ color: "white", fontWeight: '600', fontSize: 14, marginHorizontal: 8 }}>
+                        <Icon name='children' size={20} color='#ffff00' style={{ marginRight: 5 }} />
                         Couples are Welcome
                     </Text>
-                    <Text style={{ color: "grey", fontWeight: '600', fontSize: 14, marginHorizontal: 8 }}>Unmarried Couples are allowed at the property</Text>
+                    <Text style={{ color: "white", fontWeight: '600', fontSize: 14, marginHorizontal: 8 }}>Unmarried Couples are allowed at the property</Text>
                 </View>
             )}
 
             <View style={{ marginTop: 10 }}>
-                <Text style={{ color: 'black', fontSize: 20, fontWeight: '700' }}>Details:</Text>
+                <Text style={{ color: 'white', fontSize: 20, fontWeight: '700', marginLeft: 15 }}>Details:</Text>
 
                 <View style={styles.container}>
-                    <Text style={{ color: 'black', fontSize: 14, fontWeight: '500' }}>No. of guests: </Text>
+                    <Text style={{ color: 'white', fontSize: 14, fontWeight: '500' }}>No. of guests: </Text>
                     <View style={styles.itemIncDec}>
                         <TouchableOpacity onPress={() => {
                             if (person > 1) {
                                 setPerson(person - 1)
                             }
                         }}>
-                            <Icon name="minus" size={24} color="black" style={styles.IncDecicon} />
+                            <Icon name="minus" size={24} color="white" style={styles.IncDecicon} />
                         </TouchableOpacity>
-                        <Text style={{ color: 'black', fontSize: 16, fontWeight: '700' }}>{person}</Text>
+                        <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>{person}</Text>
                         <TouchableOpacity onPress={() => {
                             setPerson(person + 1);
                         }}>
-                            <Icon name="plus" size={24} color="black" style={styles.IncDecicon} />
+                            <Icon name="plus" size={24} color="white" style={styles.IncDecicon} />
                         </TouchableOpacity>
                     </View>
-                    <Text style={{ color: 'black', fontSize: 16, fontWeight: '700' }}>Rooms: {Math.ceil(person / 2)}</Text>
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>Rooms: {Math.ceil(person / 2)}</Text>
                 </View>
             </View>
 
-            <Calendar
-                style={{
-                    borderWidth: 1,
-                    borderColor: 'gray',
-                    height: 350,
+            <CalendarPicker
+                onDateChange={handleDayPress}
+                minDate={new Date()} // Minimum selectable date
+                todayBackgroundColor="transparent"
+                selectedDayColor="crimson"
+                selectedDayTextColor="#ffffff"
+                textStyle={{
+                    color: '#ffffff',
+                    fontFamily: 'monospace',
                 }}
-                theme={{
-                    backgroundColor: '#1a1a1a', // Background color
-                    calendarBackground: '#333333', // Calendar background color
-                    textSectionTitleColor: '#ffffff', // Text color for section titles (e.g., "January 2024")
-                    selectedDayBackgroundColor: '#ff6600', // Background color for selected day
-                    selectedDayTextColor: '#ffffff', // Text color for selected day
-                    todayTextColor: '#ff6600', // Text color for today's date
-                    dayTextColor: '#ffffff', // Text color for days
-                    textDisabledColor: '#666666', // Text color for disabled (out of range) days
-                    dotColor: '#ff6600', // Color of dots (e.g., for marking events)
-                    selectedDotColor: '#ffffff', // Color of dots for selected day
-                    arrowColor: '#ff6600', // Color of arrows (e.g., for navigating between months)
-                    monthTextColor: '#ffffff', // Text color for month title
-                    indicatorColor: '#ff6600', // Color for indicators (e.g., for selected date marker)
-                    textDayFontFamily: 'monospace', // Font family for day text
-                    textMonthFontFamily: 'monospace', // Font family for month text
-                    textDayHeaderFontFamily: 'monospace', // Font family for day header text
-                    textDayFontWeight: 'normal', // Font weight for day text
-                    textMonthFontWeight: 'bold', // Font weight for month text
-                    textDayHeaderFontWeight: 'normal', // Font weight for day header text
-                    textDayFontSize: 16, // Font size for day text
-                    textMonthFontSize: 16, // Font size for month text
-                    textDayHeaderFontSize: 16, // Font size for day header text
+                monthTitleStyle={{
+                    color: '#ffffff',
+                    fontFamily: 'monospace',
+                    fontWeight: 'bold',
                 }}
-                current={new Date().toISOString().split('T')[0]}
-                minDate={new Date().toISOString().split('T')[0]}
-                onDayPress={handleDayPress}
-                markedDates={markedDates}
+                yearTitleStyle={{
+                    color: '#ffffff',
+                    fontFamily: 'monospace',
+                }}
+                customDatesStyles={customDatesStyles} // Apply custom marked styles
             />
+
 
             {/* Laundry Shop Section */}
             {selectedLaundryShop && (
@@ -645,7 +655,7 @@ const formatTime = (hour) => {
             <Text style={styles.laundryQuestionText}>Do you want laundry service during your stay?</Text>
 
             {laundryServiceAdded ? (
-              <Text style={styles.laundryAddedText}>Laundry added to hotel bookings</Text>
+              <Text style={[styles.laundryAddedText, {color: 'white'}]}>Laundry added to hotel bookings</Text>
             ) : (
               <View style={styles.laundryButtons}>
                 <TouchableOpacity
@@ -672,35 +682,35 @@ const formatTime = (hour) => {
 
       <HotelRatingSummary hotelId={hotel._id} />
 
-<View style={{ paddingLeft: 20, paddingRight: 20, paddingBottom: 20 }}>
-                <Text style={{ color: 'black', fontSize: 20, fontWeight: '700' }}>Bill Details</Text>
-                <View style={{ backgroundColor: '#5ecdf9', width: '100%', padding: 20, borderRadius: 20, marginTop: 10 }}>
-                    <View style={{ borderBottomWidth: 1, borderBottomColor: 'black', marginTop: 10 }} />
+  <View style={{ paddingLeft: 20, paddingRight: 20, paddingBottom: 20, paddingTop: 10 }}>
+                <Text style={{ color: 'white', fontSize: 20, fontWeight: '700' }}>Bill Details</Text>
+                <View style={{ backgroundColor: '#9f0d91', width: '100%', padding: 20, borderRadius: 20, marginTop: 10 }}>
+                    <View style={{ borderBottomWidth: 1, borderBottomColor: 'white', marginTop: 10 }} />
                     <View style={styles.bill}>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Total Room</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>{Math.ceil(person / 2)}</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>Total Room</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>{Math.ceil(person / 2)}</Text>
                     </View>
                     <View style={styles.bill}>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Total Person</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>{person}</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>Total Person</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>{person}</Text>
                     </View>
-                    <View style={{ borderBottomWidth: 1, borderBottomColor: 'black', marginTop: 10 }} />
+                    <View style={{ borderBottomWidth: 1, borderBottomColor: 'white', marginTop: 10 }} />
                     <View style={styles.bill}>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Bill</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {roomPrice}</Text>
-                    </View>
-                    <View style={styles.bill}>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Platform fee</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {platformFee}</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>Bill</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>Rs {roomPrice}</Text>
                     </View>
                     <View style={styles.bill}>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>GST & Hotel Charges</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs 30</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>Convinient fee</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>Rs {platformFee}</Text>
                     </View>
-                    <View style={{ borderBottomWidth: 1, borderBottomColor: 'black', marginTop: 10 }} />
                     <View style={styles.bill}>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>To Pay</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {roomPrice + platformFee}</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>{gst}% GST & Hotel Charges</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>Rs {Math.ceil((gst/100)*(roomPrice + platformFee))}</Text>
+                    </View>
+                    <View style={{ borderBottomWidth: 1, borderBottomColor: 'white', marginTop: 10 }} />
+                    <View style={styles.bill}>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>To Pay</Text>
+                        <Text style={{ color: 'white', fontSize: 14, fontWeight: '700' }}>Rs {roomPrice + platformFee + Math.ceil((gst/100)*(roomPrice + platformFee))}</Text>
                     </View>
                 </View>
             </View>
@@ -709,40 +719,40 @@ const formatTime = (hour) => {
 
             <View style={{ padding: 20 }}>
                 <TouchableOpacity
-                    style={[styles.pay, razorpay ? { backgroundColor: 'lightgreen' } : null, { borderTopLeftRadius: 20, borderTopRightRadius: 20 }]}
+                    style={[styles.pay, razorpay ? { backgroundColor: '#68095f' } : null, { borderTopLeftRadius: 20, borderTopRightRadius: 20 }]}
                     onPress={() => {
                         setRazorpay(true)
                         setCod(false);
                     }}>
-                    <Icon name="credit-card" size={25} color="black" />
-                    <Text style={{ color: 'black', fontSize: 15, fontWeight: '700' }}>UPI/Credit/Debit/Net Banking</Text>
+                    <Icon name="credit-card" size={25} color="white" />
+                    <Text style={{ color: 'white', fontSize: 15, fontWeight: '700' }}>UPI/Credit/Debit/Net Banking</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.pay, cod ? { backgroundColor: 'lightgreen' } : null, { borderBottomLeftRadius: 20, borderBottomRightRadius: 20 }]}
+                    style={[styles.pay, cod ? { backgroundColor: '#68095f' } : null, { borderBottomLeftRadius: 20, borderBottomRightRadius: 20 }]}
                     onPress={() => {
                         setCod(true);
                         setRazorpay(false)
                     }}>
-                    <Icon name="money-bill" size={20} color="black" />
-                    <Text style={{ color: 'black', fontSize: 15, fontWeight: '700' }}>Cash On Delivery</Text>
+                    <Icon name="money-bill" size={20} color="white" />
+                    <Text style={{ color: 'white', fontSize: 15, fontWeight: '700' }}>Cash On Delivery</Text>
                 </TouchableOpacity>
             </View>
 
-            <View style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: '#5ecdf9' }}>
+            <View style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: '#9f0d91' }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 }}>
-                    <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Pay Rs {roomPrice + platformFee}</Text>
+                    <Text style={{ color: 'white', fontSize: 18, fontWeight: '700' }}>Pay Rs {roomPrice + platformFee + Math.ceil((gst/100)*(roomPrice + platformFee))}</Text>
                     {razorpay && (
                         <TouchableOpacity
                             onPress={razorPay}
-                            style={{ backgroundColor: 'lightgreen', padding: 15, borderRadius: 10 }}>
+                            style={{ backgroundColor: '#68095f', padding: 15, borderRadius: 10 }}>
                             <Text style={{ color: 'white', fontSize: 15, fontWeight: '700' }}>Pay UPI/Credit/Debit/Net Banking</Text>
                         </TouchableOpacity>
                     )}
                     {cod && (
                         <TouchableOpacity
                             onPress={codConfirm}
-                            style={{ backgroundColor: 'lightgreen', padding: 15, borderRadius: 10 }}>
+                            style={{ backgroundColor: '#68095f', padding: 15, borderRadius: 10 }}>
                             <Text style={{ color: 'white', fontSize: 15, fontWeight: '700' }}>Pay Cash at Hotel</Text>
                         </TouchableOpacity>
                     )}
@@ -762,7 +772,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-evenly',
         alignItems: 'center',
-        backgroundColor: 'pink',
+        backgroundColor: '#9f0d91',
         borderRadius: 13,
         width: width / 2.5
     },
@@ -777,16 +787,14 @@ const styles = StyleSheet.create({
         justifyContent: 'space-evenly',
         alignItems: 'center',
         marginTop: 2,
-        backgroundColor: '#5ecdf9',
+        backgroundColor: '#9f0d91',
         padding: 20
     },
     laundryContainer: {
         marginVertical: 24,
         padding: 16,
-        borderWidth: 1,
-        borderColor: '#dcdcdc',
         borderRadius: 8,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#9f0d91',
     },
     bill: {
         flexDirection: 'row',
@@ -797,7 +805,7 @@ const styles = StyleSheet.create({
     laundryTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#ffff00',
         marginBottom: 12,
     },
     laundryShop: {
@@ -822,7 +830,7 @@ const styles = StyleSheet.create({
     },
     laundryQuestionText: {
         fontSize: 18,
-        color: '#333',
+        color: 'white',
         fontWeight: '500',
         marginBottom: 10,
     },
@@ -849,7 +857,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-evenly'
     },
     slotPress: {
-        borderColor: 'black',
+        borderColor: 'white',
         borderWidth: 1,
         borderRadius: 15,
         padding: 8
@@ -880,7 +888,7 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     resbutton: {
-        backgroundColor: '#1e90ff', // Vibrant blue for the button
+        backgroundColor: '#1e90ff', // Vibrant #ffff00 for the button
         paddingVertical: 15,
         paddingHorizontal: 40,
         borderRadius: 30,
@@ -896,6 +904,16 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         textAlign: 'center',
     },
+    loading: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#68095f'
+    },
+    lottie: {
+        width: '100%',
+        height: '100%',
+      }
 })
 
 export default HotelCart

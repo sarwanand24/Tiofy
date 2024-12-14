@@ -26,8 +26,8 @@ const MainApp = (props) => {
       navigationState={{ index, routes }}
       onIndexChange={setIndex}
       renderScene={renderScene}
-      barStyle={{ backgroundColor: '#5ecdf9', height: 50 }}
-      activeColor='lightpink'
+      barStyle={{ backgroundColor: '#9f0d91', height: 50 }}
+      activeColor='#68095f'
       inactiveColor='white'
     />
   );

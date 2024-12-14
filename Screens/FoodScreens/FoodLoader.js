@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'white'
+        backgroundColor: '#68095f'
     },
     lottie: {
         width: '100%',

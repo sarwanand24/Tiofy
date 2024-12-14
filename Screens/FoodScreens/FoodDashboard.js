@@ -10,8 +10,12 @@ import moment from 'moment';
 import { Switch } from 'react-native-paper';
 import FoodLoader from './FoodLoader';
 import socket from '../../utils/Socket';
+import LottieView from 'lottie-react-native';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
 const { width, height } = Dimensions.get('window');
+
+const GOOGLE_API_KEY = 'AIzaSyCEaITG1Dzxu2l4rrNzABJ3aU-9tbBrZRk';
 
 const FoodDashboard = (props) => {
 
@@ -35,6 +39,9 @@ const FoodDashboard = (props) => {
     const [weatherData, setWeatherData] = useState(null);
     const [nearbyRestaurants, setNearbyRestaurants] = useState([]);
     const [festiveImg, setFestiveImg] = useState('');
+    const [manualLocation, setManualLocation] = useState(false);
+    const [showOrders, setShowOrders] = useState(true);
+    const [hiddenOrders, setHiddenOrders] = useState([]);
 
     const secondRowRef = useRef(null);
     const scrollViewRef = useRef(null);
@@ -56,25 +63,47 @@ const FoodDashboard = (props) => {
                         setUserLatitude(latitude);
                         setUserLongitude(longitude);
                         const jwtToken = await AsyncStorage.getItem('token');
-                        try {  
+                        try {
                             console.log(latitude, longitude);
+
+                            // Google Geocoding API URL
                             const response = await fetch(
-                                `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-                                {
-                                  headers: {
-                                    'User-Agent': 'ReactNativeApp/1.0', // Include the User-Agent header
-                                  },
-                                }
-                              );
-                            console.log('responserani', response);
+                                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_API_KEY}`
+                            );
+
+                            console.log('Response:', response);
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+
                             const data = await response.json();
-                            console.log('data', data);
-                            const fullAddress = `${data.address.city}, ${data.address.state}, ${data.address.country}`;
-                            setCity(fullAddress);
-                            setPlaceName(data.display_name);
+                            console.log('Data:', data);
+
+                            if (data.results && data.results.length > 0) {
+                                // Extract address components
+                                const addressComponents = data.results[0].address_components;
+                                const city = addressComponents.find(comp => comp.types.includes('locality'))?.long_name || 'N/A';
+                                const state = addressComponents.find(comp => comp.types.includes('administrative_area_level_1'))?.long_name || 'N/A';
+                                const country = addressComponents.find(comp => comp.types.includes('country'))?.long_name || 'N/A';
+
+                                // Full address and display name
+                                const fullAddress = `${city}, ${state}, ${country}`;
+                                setCity(fullAddress);
+                                const formattedAddress = data.results[0].formatted_address;
+                                const placename = formattedAddress.split(', ').slice(1).join(', ');
+                                setPlaceName(placename);
+                            } else {
+                                console.warn('No results found for the given coordinates');
+                                setCity('Unknown location');
+                                setPlaceName('Unknown location');
+                            }
+
+                            // Fetch restaurants or other data based on the place
                             await fetchRestaurants();
+
                         } catch (error) {
-                            console.error('Error fetching place name:', error);
+                            console.log('Error fetching place name using Google API:', error);
                         }
 
                         try {
@@ -87,7 +116,7 @@ const FoodDashboard = (props) => {
                                 body: JSON.stringify({ latitude, longitude })
                             });
                         } catch (error) {
-                            console.error('Error updating location:', error);
+                            console.log('Error updating location:', error);
                         }
                     },
                     (error) => {
@@ -125,7 +154,7 @@ const FoodDashboard = (props) => {
                 console.log('weatherrrrr', weatherData);
 
             } catch (error) {
-                console.error("Error fetching weather data: ", error);
+                console.log("Error fetching weather data: ", error);
                 return null;
             }
         }
@@ -137,8 +166,8 @@ const FoodDashboard = (props) => {
     useEffect(() => {
         // Calculate the height based on the availability of weather data and image
         const baseHeight = 150; // Minimum height with search bar only
-        const weatherHeight = weatherData ? 220 : 0; // Height for weather data
-        const imageHeight = weatherData && weatherData.isRaining ? 260 : 0; // Height for image
+        const weatherHeight = weatherData ? 118 : 0; // Height for weather data
+        const imageHeight = weatherData && weatherData.isRaining ? 260 : 80; // Height for image
 
         // Update the header height based on the content
         setHeaderHeight(baseHeight + weatherHeight + imageHeight);
@@ -159,10 +188,9 @@ const FoodDashboard = (props) => {
 
     const headerBackgroundColor = scrollY.interpolate({
         inputRange: [0, 150],
-        outputRange: ['#5ecdf9', 'lightgrey'],
+        outputRange: ['#68095f', 'lightgrey'],
         extrapolate: 'clamp',
     });
-
 
     const headerHeightAnim = scrollY.interpolate({
         inputRange: [0, 150],
@@ -175,8 +203,8 @@ const FoodDashboard = (props) => {
         try {
             const response = await fetch(`https://trioserver.onrender.com/api/v1/users/getAllRestaurants/${city}?vegMode=${vegMode}`);
             const data = await response.json();
-            setFoods(data.foods);
-            setRestaurants(data.restaurants);
+            setFoods(data.foods || []);
+            setRestaurants(data.restaurants || []);
             setError(null);
 
             if (data.restaurants.length > 0) {
@@ -184,7 +212,7 @@ const FoodDashboard = (props) => {
                 await fetchRoute(data.restaurants);
             }
         } catch (error) {
-            console.error('Error fetching restaurants:', error);
+            console.log('Error fetching restaurants:', error);
             setError('Failed to load restaurants.');
             setLoading(false);
         } finally {
@@ -205,7 +233,7 @@ const FoodDashboard = (props) => {
                     setUserName(parsedData.fullName); // Assuming the full name is stored in 'fullName'
                 }
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.log('Error fetching user data:', error);
             }
         };
 
@@ -218,7 +246,7 @@ const FoodDashboard = (props) => {
                 const response = await axios.get('https://trioserver.onrender.com/api/v1/users/food-carousel-images');
                 setCarouselData(response.data);
             } catch (error) {
-                console.error('Error fetching carousel data', error);
+                console.log('Error fetching carousel data', error);
             }
         };
 
@@ -232,11 +260,8 @@ const FoodDashboard = (props) => {
                 <Image
                     source={{ uri: secureImageUrl }}
                     style={styles.carouselImage}
-                    resizeMode="cover"
+                    resizeMode="contain"
                 />
-                <View style={styles.carouselTextContainer}>
-                    <Text style={styles.carouselText}>{item.title}</Text>
-                </View>
             </View>
         );
     };
@@ -277,8 +302,8 @@ const FoodDashboard = (props) => {
 
     // Divide the data into two rows
     const divideIntoRows = (data) => {
-        const mid = Math.ceil(data.length / 2);
-        return [data.slice(0, mid), data.slice(mid)];
+        const mid = Math.ceil(data?.length / 2);
+        return [data?.slice(0, mid), data?.slice(mid)];
     };
 
     const [row1, row2] = divideIntoRows(foods);
@@ -301,13 +326,13 @@ const FoodDashboard = (props) => {
                 const response2 = await axios.get('https://trioserver.onrender.com/api/v1/users/festive-offer-images');
                 setFestiveImg(response2.data[0]?.imageUrl)
             } catch (error) {
-                console.error('Error fetching offers data', error);
+                console.log('Error fetching offers data', error);
             }
         };
 
         fetchOffersData();
     }, []);
-    
+
 
     useEffect(() => {
         if (offersData.length > 0) {
@@ -350,7 +375,7 @@ const FoodDashboard = (props) => {
 
             setRestaurants(updatedRestaurants);
         } catch (error) {
-            console.error('Error fetching routes:', error);
+            console.log('Error fetching routes:', error);
         }
     };
 
@@ -358,7 +383,7 @@ const FoodDashboard = (props) => {
         const filteredData = restaurants.filter((restaurant) => restaurant.distance / 1000 < 5);
         setNearbyRestaurants(filteredData);
     }, [restaurants])
-    
+
     const renderRestaurants = ({ item, index }) => {
         const distanceInKm = (item.distance / 1000).toFixed(2);
 
@@ -435,7 +460,7 @@ const FoodDashboard = (props) => {
                 console.log('responseeoooo', response.data);
                 setUndeliveredOrders(response.data);
             } catch (error) {
-                console.error('Error fetching undelivered orders:', error);
+                console.log('Error fetching undelivered orders:', error);
             }
         };
 
@@ -487,7 +512,7 @@ const FoodDashboard = (props) => {
                 <View style={styles.restaurantDetailsNearBy}>
                     <Text style={styles.restaurantNameNearBy}> {item.restaurantName}</Text>
                     <Text style={styles.restaurantInfoNearBy}><Icon name="star" size={14} color="green" style={styles.icon} />
-                    {'\u00A0'}{(item.ratings).toFixed(1)} · {distanceInKm} km · {minutes} minutes</Text>
+                        {'\u00A0'}{(item.ratings).toFixed(1)} · {distanceInKm} km · {minutes} minutes</Text>
                     <Text style={styles.restaurantInfoNearBy2}>{item.cuisineType}</Text>
                     {!isRestaurantOpen && (
                         <Text style={styles.closed}>Closed</Text>
@@ -501,12 +526,111 @@ const FoodDashboard = (props) => {
         return <FoodLoader />
     }
 
-    if (restaurants.length === 0) {
+    if (restaurants?.length === 0) {
         return <Text style={styles.noRestaurantsText}>Sorry! we don't serve in your area.</Text>
     }
 
     const onToggleSwitch = () => {
         setVegMode(!vegMode);
+    };
+
+    if (manualLocation) {
+        return (
+            <View style={styles.manualLocationContainer}>
+                <GooglePlacesAutocomplete
+                    placeholder="Enter Your Location"
+                    fetchDetails={true}
+                    onPress={async (data, details = null) => {
+                        console.log('Log of autocomplete:', details);
+
+                        if (details) {
+                            const addressComponents = details.address_components;
+
+                            // Extract city, state, and country
+                            const city =
+                                addressComponents.find((component) =>
+                                    component.types.includes('locality')
+                                )?.long_name || 'N/A';
+
+                            const state =
+                                addressComponents.find((component) =>
+                                    component.types.includes('administrative_area_level_1')
+                                )?.long_name || 'N/A';
+
+                            const country =
+                                addressComponents.find((component) =>
+                                    component.types.includes('country')
+                                )?.long_name || 'N/A';
+
+                            // Set city and placeName
+                            const fullAddress = `${city}, ${state}, ${country}`;
+                            setCity(fullAddress);
+
+                            const formattedAddress = details.formatted_address;
+                            const placename = formattedAddress
+                                .split(', ')
+                                .slice(1)
+                                .join(', ');
+                            setPlaceName(placename);
+
+                            console.log('City:', city);
+                            console.log('Place Name:', placename);
+                            // Reset manualLocation to false
+                            setManualLocation(false);
+                        } else {
+                            console.warn('Details are null');
+                        }
+                    }}
+                    query={{
+                        key: GOOGLE_API_KEY, // Your Google API Key here
+                        language: 'en',
+                    }}
+                    suppressDefaultStyles={false} // Use default styles for better integration
+                    styles={{
+                        textInputContainer: {
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: '#f1f1f1',
+                            borderRadius: 8,
+                            marginVertical: 10,
+                            paddingHorizontal: 10,
+                        },
+                        textInput: {
+                            flex: 1,
+                            height: 48,
+                            color: '#333',
+                            fontSize: 16,
+                            paddingHorizontal: 8,
+                        },
+                        predefinedPlacesDescription: {
+                            color: '#1faadb',
+                        },
+                        listView: {
+                            backgroundColor: '#fff',
+                            borderRadius: 8,
+                            elevation: 3,
+                            shadowColor: '#000',
+                            shadowOpacity: 0.1,
+                            shadowRadius: 5,
+                            shadowOffset: { width: 0, height: 2 },
+                        },
+                        row: {
+                            paddingVertical: 12,
+                            paddingHorizontal: 16,
+                            borderBottomColor: '#eee',
+                            borderBottomWidth: 1,
+                        },
+                    }}
+                    renderLeftButton={() => (
+                        <Icon name="search-outline" size={24} color="#666" style={styles.searchIcon} />
+                    )}
+                />
+            </View>
+        );
+    }
+
+    const handleHideOrder = (orderId) => {
+        setHiddenOrders((prev) => [...prev, orderId]); // Add the order ID to the hidden list
     };
 
     return (
@@ -523,15 +647,20 @@ const FoodDashboard = (props) => {
                 <Animated.View style={[styles.headerContainer, { height: headerHeightAnim, backgroundColor: headerBackgroundColor }]}>
                     <View style={styles.locationContainer}>
                         <Icon name="location" size={24} color="red" />
-                        <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
-                            {placeName ? placeName : "Fetching location..."}
-                        </Text>
+                        <View>
+                            <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+                                {placeName ? placeName : "Fetching location..."}
+                            </Text>
+                            <TouchableOpacity onPress={() => { setManualLocation(true) }}>
+                                <Text style={{ color: '#ffff00', fontSize: 12, fontWeight: 'bold', marginLeft: 5 }}>Change Location</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     <View style={styles.vegmode}>
-                            <Switch value={vegMode} onValueChange={onToggleSwitch} color='green' />
-                            <Text style={{color:'green'}}>Veg Mode</Text>
-                     </View>
+                        <Switch value={vegMode} onValueChange={onToggleSwitch} color='#7afc2a' />
+                        <Text style={{ color: '#7afc2a' }}>Veg Mode</Text>
+                    </View>
 
                     <View style={styles.searchBar}>
                         <TextInput
@@ -543,7 +672,7 @@ const FoodDashboard = (props) => {
                         <Icon
                             name="search"
                             size={24}
-                            color="white"
+                            color="black"
                             style={styles.searchIcon}
                         />
                     </View>
@@ -551,15 +680,15 @@ const FoodDashboard = (props) => {
                     {/* Conditionally render the weather info and image */}
                     {weatherData && (
                         <Animated.View style={[styles.weatherContainer, { opacity: fadeOutOpacity, transform: [{ translateY }] }]}>
-                                <Text style={styles.weatherText}>
+                            <Text style={styles.weatherText}>
                                 Weather: {(weatherData.temp - 273.15).toFixed(1)}°C {weatherData.condition}
                             </Text>
                             {weatherData.isRaining && (
                                 <View style={styles.rainContainer}>
-                                    <Image
-                                        source={{ uri: 'https://th.bing.com/th/id/OIP.fTzXqhwwNDZHkZzc0zv-3wAAAA?w=300&h=299&rs=1&pid=ImgDetMain' }}
-                                        style={styles.rainImage}
-                                    />
+                                    <View style={{ width: 80, height: 80 }}>
+                                        <LottieView source={require('../../assets/Animations/rain.json')}
+                                            style={styles.lottie} autoPlay loop />
+                                    </View>
                                     <Text style={styles.rainText}>
                                         Due to the rain gods being extra generous today, expect a slight delay with your rider's arrival.
                                     </Text>
@@ -570,9 +699,9 @@ const FoodDashboard = (props) => {
 
                     {festiveImg && (
                         <Animated.Image
-                        source={{ uri: festiveImg.replace('http://', 'https://') }}
-                        style={[styles.headerOffer, { opacity: fadeOutOpacity, transform: [{ translateY }] }]}
-                    />
+                            source={{ uri: festiveImg.replace('http://', 'https://') }}
+                            style={[styles.headerOffer, { opacity: fadeOutOpacity, transform: [{ translateY }] }]}
+                        />
                     )}
 
                 </Animated.View>
@@ -712,22 +841,37 @@ const FoodDashboard = (props) => {
                     {undeliveredOrders.length > 0 && (
                         <View style={styles.orderBox}>
                             <ScrollView style={styles.ordersScrollView}>
-                                {undeliveredOrders.map((order, index) => (
-                                    <TouchableOpacity
-                                        key={index}
-                                        style={styles.orderItem}
-                                        onPress={() => {
-                                            props.navigation.push('MapDirection', {
-                                                orderId: order._id,
-                                                socket,
-                                                userId: order.orderedBy,
-                                            });
-                                        }}
-                                    >
-                                        <Text style={styles.orderText}>Your recent order is on the way</Text>
-                                        <Text style={styles.orderText}>Order ID: {order._id}</Text>
-                                    </TouchableOpacity>
-                                ))}
+                                {undeliveredOrders.map((order, index) => {
+                                    if (hiddenOrders.includes(order._id)) return null; // Skip hidden orders
+
+                                    return (
+                                        <View key={index} style={styles.orderItemContainer}>
+                                            {/* Close Button */}
+                                            <TouchableOpacity
+                                                style={styles.closeButton}
+                                                onPress={() => handleHideOrder(order._id)} // Hide only this order
+                                            >
+                                                <Text style={styles.closeButtonText}>×</Text>
+                                            </TouchableOpacity>
+
+                                            {/* Order Details */}
+                                            <TouchableOpacity
+                                                style={styles.orderItem}
+                                                onPress={() => {
+                                                    props.navigation.push('MapDirection', {
+                                                        orderId: order._id,
+                                                        socket,
+                                                        userId: order.orderedBy,
+                                                    });
+                                                }}
+                                            >
+                                                <Text style={styles.orderText}>{order?.orderStatus || 'Your order is getting Prepared'}</Text>
+                                                <Text style={styles.orderText}>Otp: {order?.otp}</Text>
+                                                <Text style={styles.orderText}>Order ID: {order._id}</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    );
+                                })}
                             </ScrollView>
                         </View>
                     )}
@@ -755,17 +899,17 @@ const styles = StyleSheet.create({
         marginTop: 17,
     },
     locationText: {
-        fontSize: 16,
-        marginLeft: 8,
+        fontSize: 12,
+        marginLeft: 1,
         fontWeight: 'bold',
         color: 'white',
         width: '50%',
     },
     vegmode: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      alignItems: 'center',
-      marginHorizontal: 10
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        marginHorizontal: 10
     },
     searchBar: {
         flexDirection: 'row',
@@ -787,15 +931,15 @@ const styles = StyleSheet.create({
     },
     searchIcon: {
         padding: 5,
-        backgroundColor: '#5ecdf9',
+        backgroundColor: '#ffff00',
         borderRadius: 20,
     },
     weatherContainer: {
         paddingHorizontal: 20,
         borderRadius: 15,
-        marginTop: 10,
         alignItems: 'center',
         opacity: 1, // This will be animated to fade out
+        marginTop: 10
     },
     weatherText: {
         fontSize: 16,
@@ -807,10 +951,9 @@ const styles = StyleSheet.create({
     rainContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        backgroundColor: '#9f0d91',
         borderRadius: 10,
-        padding: 10,
-        marginTop: 2,
+        padding: 5,
         width: '100%',
     },
     rainImage: {
@@ -820,16 +963,16 @@ const styles = StyleSheet.create({
     },
     rainText: {
         fontSize: 14,
-        color: '#d9534f',
+        color: '#ffff00',
         fontStyle: 'italic',
         textAlign: 'left',
         lineHeight: 18,
         flexShrink: 1,
     },
     headerOffer: {
-        marginTop: 10,
         width: '100%',
-        height: '100%',
+        height: '53%',
+        resizeMode: 'stretch',
         opacity: 1, // This will be animated to fade out
     },
     foodListsContainer: {
@@ -879,6 +1022,10 @@ const styles = StyleSheet.create({
     carouselItem: {
         borderRadius: 10,
         overflow: 'hidden',
+        height: 150,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
     },
     carouselImage: {
         width: '100%',
@@ -1002,7 +1149,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,    // Padding inside the scroll view for better alignment
     },
     orderItem: {
-        backgroundColor: '#ADD8E6', // Light blue background for the order item
+        backgroundColor: '#68095f', // Light blue background for the order item
         borderRadius: 10,           // Rounded corners
         padding: 15,                // Space inside each order box
         marginBottom: 15,           // Space between each order box
@@ -1061,7 +1208,38 @@ const styles = StyleSheet.create({
         color: 'red',
         fontWeight: 'bold',
         textAlign: 'center',
-    }
+    },
+    lottie: {
+        width: '100%',
+        height: '100%',
+    },
+    manualLocationContainer: {
+        flex: 1,
+        backgroundColor: '#fff',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+    },
+    searchIcon: {
+        marginRight: 10,
+    },
+    closeButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: '#ff6666',
+        borderRadius: 20,
+        padding: 5,
+        zIndex: 10,
+    },
+    closeButtonText: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    orderItemContainer: {
+        position: 'relative', // Ensure relative positioning for close button
+        marginBottom: 15, // Add spacing between orders
+    },
 });
 
 export default FoodDashboard;

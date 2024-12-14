@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Text, Image } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Text, Image, KeyboardAvoidingViewComponent, KeyboardAvoidingView } from 'react-native';
 import ImagePicker from 'react-native-image-crop-picker';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/FontAwesome6";
@@ -111,6 +111,9 @@ function Signup(props) {
     }
 
     return (
+        <KeyboardAvoidingView
+        behavior='height'
+        >
         <ScrollView style={{ backgroundColor: "white" }}>
             <View style={styles.customShape}>
         <Text style={styles.loginText}>Signup</Text>
@@ -132,9 +135,9 @@ function Signup(props) {
                         mode="outlined"
                         theme={{
                             colors: {
-                                primary: 'darkblue',
-                                text: 'darkblue',
-                                placeholder: 'darkblue'
+                                primary: '#68095f',
+                                text: '#68095f',
+                                placeholder: '#68095f'
                             }
                         }}
                         style={styles.input}
@@ -148,9 +151,9 @@ function Signup(props) {
                         mode="outlined"
                         theme={{
                             colors: {
-                                primary: 'darkblue',
-                                text: 'darkblue',
-                                placeholder: 'darkblue'
+                                primary: '#68095f',
+                                text: '#68095f',
+                                placeholder: '#68095f'
                             }
                         }}
                         style={styles.input}
@@ -163,9 +166,9 @@ function Signup(props) {
                         mode="outlined"
                         theme={{
                             colors: {
-                                primary: 'darkblue',
-                                text: 'darkblue',
-                                placeholder: 'darkblue'
+                                primary: '#68095f',
+                                text: '#68095f',
+                                placeholder: '#68095f'
                             }
                         }}
                         style={styles.input}
@@ -179,9 +182,9 @@ function Signup(props) {
                         mode="outlined"
                         theme={{
                             colors: {
-                                primary: 'darkblue',
-                                text: 'darkblue',
-                                placeholder: 'darkblue'
+                                primary: '#68095f',
+                                text: '#68095f',
+                                placeholder: '#68095f'
                             }
                         }}
                         style={styles.input}
@@ -194,9 +197,9 @@ function Signup(props) {
                         mode="outlined"
                         theme={{
                             colors: {
-                                primary: 'darkblue',
-                                text: 'darkblue',
-                                placeholder: 'darkblue'
+                                primary: '#68095f',
+                                text: '#68095f',
+                                placeholder: '#68095f'
                             }
                         }}
                         style={styles.input}
@@ -210,9 +213,9 @@ function Signup(props) {
                         mode="outlined"
                         theme={{
                             colors: {
-                                primary: 'darkblue',
-                                text: 'darkblue',
-                                placeholder: 'darkblue'
+                                primary: '#68095f',
+                                text: '#68095f',
+                                placeholder: '#68095f'
                             }
                         }}
                         style={styles.input}
@@ -226,9 +229,9 @@ function Signup(props) {
                         mode="outlined"
                         theme={{
                             colors: {
-                                primary: 'darkblue',
-                                text: 'darkblue',
-                                placeholder: 'darkblue'
+                                primary: '#68095f',
+                                text: '#68095f',
+                                placeholder: '#68095f'
                             }
                         }}
                         style={styles.input}
@@ -252,7 +255,7 @@ function Signup(props) {
                         fontSize: 15,
                     }}
                 >
-                    Already Registered? <Text style={{ color: 'darkblue' }}>Login</Text>
+                    Already Registered? <Text style={{ color: '#68095f' }}>Login</Text>
                 </Text>
             </TouchableOpacity>
         </View>
@@ -262,6 +265,7 @@ function Signup(props) {
                 onClose={() => setErrorVisible(false)}
             />
         </ScrollView>
+        </KeyboardAvoidingView>
     )
 }
 
@@ -272,7 +276,7 @@ const styles = StyleSheet.create({
         left: -width * 0.1, // Move it further left to push left side off-screen
         width: width * 1, // Diameter of the ball-like shape
         height: height * 0.5, // Diameter of the ball-like shape
-        backgroundColor: '#0A4BA1',
+        backgroundColor: '#68095f',
         justifyContent: 'center',
         alignItems: 'center',
         transform: [{ rotate: '-15deg' }], // Optional: rotation to create a slant effect
@@ -295,7 +299,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
         textAlign: 'left',
         width: width / 1.5,
-        color: 'darkblue',
+        color: '#68095f',
         fontSize: 18,
         marginTop: 15,
     },
@@ -316,7 +320,7 @@ const styles = StyleSheet.create({
         marginVertical: 20,
     },
     uploadButton: {
-        backgroundColor: 'darkblue',
+        backgroundColor: '#68095f',
         borderRadius: 10,
         paddingVertical: 10,
         paddingHorizontal: 20,
@@ -337,7 +341,7 @@ const styles = StyleSheet.create({
     },
     button: {
         borderRadius: 20,
-        backgroundColor: 'darkblue',
+        backgroundColor: '#68095f',
         paddingHorizontal: 20,
         paddingVertical: 10,
         justifyContent: 'center',

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, Dimensions, StyleSheet, Text, TextInput, View, Image, ScrollView, Button, Modal } from 'react-native';
+import { TouchableOpacity, Dimensions, StyleSheet, Text, TextInput, View, Image, ScrollView, Button,
+   Modal, 
+   KeyboardAvoidingView} from 'react-native';
 import Loading from '../Loading';
 import ErrorPopup from '../ErrorPopup';
 import auth from '@react-native-firebase/auth';
@@ -7,6 +9,7 @@ import Icon from "react-native-vector-icons/FontAwesome6";
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 GoogleSignin.configure({
   webClientId: '579774610265-3bk1mgraq768pcdtip2p90oiiidre8fo.apps.googleusercontent.com',
@@ -219,8 +222,8 @@ function RegisterType(props) {
     }
 
     return (
-        <ScrollView style={{backgroundColor: 'white' }}>
-            <Image source={require('../../assets/Logo/TiofyLogo2.png')}
+        <ScrollView style={{ backgroundColor: '#68095f' }}>
+            <Image source={require('../../assets/Logo/TiofyDashboard.png')}
              style={{width: width/1.5, height:height/2.5, marginHorizontal: width/6}} />
             <View style={styles.inputContainer}>
                 <TextInput
@@ -230,6 +233,7 @@ function RegisterType(props) {
                         setemail(text)
                     }}
                     value={email}
+                    placeholderTextColor={'white'}
                 />
             </View>
             <TouchableOpacity
@@ -237,25 +241,24 @@ function RegisterType(props) {
                 onPress={Login} >
                 <Text style={styles.text}>Login</Text>
             </TouchableOpacity>
-            <Text style={[styles.text, {textAlign: 'center', marginTop:10, color:'black'}]}>OR</Text>
+            <Text style={[styles.text, {textAlign: 'center', marginTop:10, color:'white'}]}>OR</Text>
             <TouchableOpacity
                 style={styles.button}
                 onPress={() => { props.navigation.push('Signup') }} >
                 <Text style={styles.text}>Signup</Text>
             </TouchableOpacity>
-            <Text style={[styles.text, {textAlign: 'center', marginTop:10, color:'grey'}]}>Or else</Text>
 
       <TouchableOpacity style={styles.googlebutton}
        onPress={() => onGoogleButtonPress().then(() => console.log('Signed in with Google!'))}>
       <View style={styles.iconWrapper}>
-        <Icon name="google" size={24} color="#FFFFFF" />
+        <Icon name="google" size={24} color="black" />
       </View>
       <Text style={styles.buttonText}>Sign in with Google</Text>
     </TouchableOpacity>
 
-           <TouchableOpacity onPress={()=>{props.navigation.replace("MainApp")}}>
+           {/* <TouchableOpacity onPress={()=>{props.navigation.replace("MainApp")}}>
             <Text style={{color: 'grey', fontSize:20, textAlign: 'center', marginTop: 20}}>Skip</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <Modal visible={isModalVisible} transparent={true} animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -285,7 +288,7 @@ function RegisterType(props) {
 const styles = StyleSheet.create({
     inputContainer: {
         borderBottomWidth: 3,
-        borderBottomColor: 'darkblue',
+        borderBottomColor: 'white',
         width: width / 1.5,
         marginHorizontal: width / 6,
         marginTop: 15,
@@ -294,7 +297,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     input: {
-        color: "darkblue",
+        color: "white",
         fontSize: 20,
         width: width/1.5,
         fontWeight: '600'
@@ -306,7 +309,7 @@ const styles = StyleSheet.create({
     },
     button: {
         borderRadius: 20, // Make it circular by using half of the button's height
-        backgroundColor: 'darkblue', // Change the background color as needed
+        backgroundColor: '#9f0d91', // Change the background color as needed
         paddingHorizontal: 20,
         paddingVertical: 10,
         justifyContent: 'center',
@@ -319,12 +322,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#4285F4', // Google blue color
+        backgroundColor: '#ffff00', // Google blue color
         paddingVertical: 12,
         width: width-40,
         borderRadius: 4,
         elevation: 2,
-        marginLeft: 20
+        marginLeft: 20,
+        marginTop: 20
       },
       iconWrapper: {
         width: 24,
@@ -334,7 +338,7 @@ const styles = StyleSheet.create({
         marginRight: 12,
       },
       buttonText: {
-        color: '#FFFFFF',
+        color: 'black',
         fontSize: 16,
         fontWeight: 'bold',
       },

@@ -9,7 +9,7 @@ const HotelLoader = () => {
 
     return (
         <View style={styles.loading}>
-           <LottieView source={require('../../assets/Animations/FoodLoader.json')}
+           <LottieView source={require('../../assets/Animations/HotelLoader.json')}
            style={styles.lottie} autoPlay loop />
         </View>
     );
@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'white'
+        backgroundColor: '#68095f'
     },
     lottie: {
         width: '100%',

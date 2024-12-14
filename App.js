@@ -27,6 +27,10 @@ import Flat from './Screens/HotelScreens/Flat';
 import HotelCart from './Screens/HotelScreens/HotelCart';
 import HotelOrderHistory from './Screens/HotelScreens/HotelOrderHistory';
 import HotelRatingSummary from './Screens/HotelScreens/HotelRatingSummary';
+import LiquorDashboard from './Screens/LiquorScreens/LiquorDashboard';
+import CyrOrderHistory from './Screens/CYRScreens/CyrOrderHistory';
+import HelpSupportScreen from './Screens/HelpSupportScreen';
+import UserProfile from './Screens/UserProfile';
 
 const Stack = createNativeStackNavigator();
 
@@ -44,11 +48,13 @@ const App = () => {
         <Stack.Screen name="MainApp" component={MainApp} />
         <Stack.Screen name="FoodDashboard" component={FoodDashboard} />
         <Stack.Screen name="CyrDashboard" component={CyrDashboard} />
+        <Stack.Screen name="LiquorDashboard" component={LiquorDashboard} />
         <Stack.Screen name="Restaurant" component={Restaurant} />
         <Stack.Screen name="FoodCart" component={FoodCart} />
         <Stack.Screen name="HotelCart" component={HotelCart} />
         <Stack.Screen name="FoodOrderHistory" component={FoodOrderHistory} />
         <Stack.Screen name="HotelOrderHistory" component={HotelOrderHistory} />
+        <Stack.Screen name="CyrOrderHistory" component={CyrOrderHistory} />
         <Stack.Screen name="MapDirection" component={MapDirection} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Signup" component={Signup} />
@@ -62,6 +68,8 @@ const App = () => {
         <Stack.Screen name="Flat" component={Flat} />
         <Stack.Screen name="CityNames" component={CityNames} />
         <Stack.Screen name="HotelRatingSummary" component={HotelRatingSummary} />
+        <Stack.Screen name="UserProfile" component={UserProfile} />
+        <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

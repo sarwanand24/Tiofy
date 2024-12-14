@@ -7,7 +7,7 @@ import BackButton from '../../components/BackButton';
 import LottieView from 'lottie-react-native';
 import RazorpayCheckout from 'react-native-razorpay';
 import FoodLoader from './FoodLoader';
-import logo from '../../assets/Logo/tiofydashboard.png';
+import logo from '../../assets/Logo/TiofyDashboard.png';
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,11 +33,12 @@ function FoodCart(props) {
     const [restroRejected, setRestroRejected] = useState(false);
     const [restroAccepted, setRestroAccepted] = useState(false);
     const [loading, setLoading] = useState(false)
-    const [deliveryFee, setDeliveryFee] = useState(Math.floor(distance*10.5));
-    const [platformFee, setPlatformFee] = useState(5);
+    const [deliveryFee, setDeliveryFee] = useState(Math.ceil(distance*10.5));
+    const [platformFee, setPlatformFee] = useState(15);
     const [paymentFailure, setPaymentFailure] = useState(false);
     const [verifyFailure, setVerifyFailure] = useState(false);
     const [paymentData, setPaymentData] = useState({});
+    const [gst, setGst] = useState(12);
 
     console.log("New Selected Foods", newSelectedFoods);
     console.log("New Total Amount", newTotalAmount);
@@ -102,14 +103,23 @@ function FoodCart(props) {
         const timeChecker = async() => {
             const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata');
         const data = await response.json();
+        const response2 = await fetch('https://trioserver.onrender.com/api/v1/users/get-all-fees');
+        const data2 = await response2.json();
+        console.log('dataaaa------', data2)
         const currentHour = new Date(data.datetime).getHours();
         const isDiscountTime = currentHour >= 0 && currentHour <= 6; // Checking if the time is between 12 AM and 6 AM
-        let fee = distance * 10.5;
-
+        let fee = distance * data2?.deliveryFeeBike || 10.5;
+   
         if (isDiscountTime) {
             fee *= 2; // Double the delivery fee if the time is between 12 AM and 6 AM
         }
-        setDeliveryFee(Math.floor(fee)); // Update the state with the calculated delivery fee
+        if(data2?.convinientFee) {
+            setPlatformFee(data2?.convinientFee)
+        }
+        if(data2?.restroGst) {
+            setGst(data2?.restroGst)
+        }
+        setDeliveryFee(Math.ceil(fee)); // Update the state with the calculated delivery fee
         }
 
         timeChecker();
@@ -132,15 +142,15 @@ function FoodCart(props) {
           if (verificationResponse.success) {
             console.log("Tapped", socket);
             console.log("Restro", deviceToken);
-            const userDeviceToken = await AsyncStorage.getItem("deviceToken")
             const StringUserdata = await AsyncStorage.getItem("Userdata")
             const Userdata = JSON.parse(StringUserdata);
+            const userDeviceToken = await AsyncStorage.getItem("deviceToken");
             console.log("Userdata", Userdata);
             console.log("UserdataAddress", Userdata.address, Userdata._id);
             console.log("SocketId", socket.id);
             const otp = Math.floor(1000 + Math.random() * 9000);
             console.log(`Generated OTP: ${otp}`);
-            socket.emit("FoodyOrderPlaced", { restroId, deviceToken, newSelectedFoods, newTotalItem, newTotalAmount: newTotalAmount + deliveryFee + tipAmount + platformFee, riderEarning: deliveryFee + tipAmount, newTotalRestroAmount, userDeviceToken, socketId: socket.id, userAddress: Userdata.address || '', userId: Userdata._id, otp })
+            socket.emit("FoodyOrderPlaced", { restroId, deviceToken, newSelectedFoods, newTotalItem, newTotalAmount: newTotalAmount + deliveryFee + tipAmount + platformFee + Math.ceil((gst/100)*(newTotalAmount + tipAmount + deliveryFee + platformFee)), riderEarning: deliveryFee + tipAmount, newTotalRestroAmount, userDeviceToken, socketId: socket.id, userAddress: Userdata.address || '', userId: Userdata._id, otp })
           } else {
             setVerifyFailure(true)
             await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -169,7 +179,7 @@ function FoodCart(props) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              amount: newTotalAmount + tipAmount + deliveryFee + platformFee, // Example amount in INR (Rupees)
+              amount: newTotalAmount + tipAmount + deliveryFee + platformFee + Math.ceil((gst/100)*(newTotalAmount + tipAmount + deliveryFee + platformFee)), // Example amount in INR (Rupees)
             }),
           });
           setLoading(false);
@@ -190,7 +200,7 @@ function FoodCart(props) {
                 contact: '7550894302',
                 name: 'Nikhil Dhamgay'
               },
-              theme: {color: '#5ecdf9'}
+              theme: {color: '#68095f'}
             }
             RazorpayCheckout.open(options).then((data) => {
               const paymentData = {
@@ -211,97 +221,46 @@ function FoodCart(props) {
       }
     }
 
-    if (paymentFailure) {
-        return (
-            <View style={styles.restroContainer}>
-                <Text style={styles.messageText}>
-                OOps! Payment Unsuccessfull 
-                </Text>
-                <Text style={styles.subMessageText}>
-                    Please try again!
-                </Text>
-                <LottieView
-                    source={require('../../assets/Animations/RestroRejected.json')}
-                    style={styles.lottie}
-                    autoPlay
-                    loop
-                />
-                <TouchableOpacity style={styles.resbutton} onPress={() => { props.navigation.pop() }}>
-                    <Text style={styles.resbuttonText}>Go Back!</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
+    // const codOrderConfirm = async () => {
+    //     setLoading(true);
+    //     console.log("Tapped", socket);
+    //     console.log("Restro", deviceToken);
+    //     const StringUserdata = await AsyncStorage.getItem("Userdata")
+    //     const userDeviceToken = await AsyncStorage.getItem("deviceToken");
+    //     const Userdata = JSON.parse(StringUserdata);
+    //     console.log("Userdata", Userdata);
+    //     console.log("UserdataAddress", Userdata.address, Userdata._id);
+    //     console.log("SocketId", socket.id);
+    //     const otp = Math.floor(1000 + Math.random() * 9000);
+    //     console.log(`Generated OTP: ${otp}`);
+    //     socket.emit("FoodyOrderPlaced", { restroId, deviceToken, newSelectedFoods, newTotalItem, newTotalAmount: newTotalAmount + deliveryFee + tipAmount + platformFee + Math.ceil((gst/100)*(newTotalAmount + tipAmount + deliveryFee + platformFee)) , riderEarning: deliveryFee + tipAmount, newTotalRestroAmount, userDeviceToken, socketId: socket.id, userAddress: Userdata.address || '', userId: Userdata._id, otp })
+    // }
 
-    if (verifyFailure) {
-        return (
-            <View style={styles.restroContainer}>
-                <Text style={styles.messageText}>
-                    OOps! Payment Verification Failed
-                </Text>
-                <Text style={styles.subMessageText}>
-                    Something went wrong, You might have cheated us!
-                </Text>
-                <LottieView
-                    source={require('../../assets/Animations/RestroRejected.json')}
-                    style={styles.lottie}
-                    autoPlay
-                    loop
-                />
-                <TouchableOpacity style={styles.resbutton} onPress={() => { props.navigation.pop() }}>
-                    <Text style={styles.resbuttonText}>Go Back!</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
-
-    const codOrderConfirm = async () => {
-        setLoading(true);
-        console.log("Tapped", socket);
-        console.log("Restro", deviceToken);
-        const userDeviceToken = await AsyncStorage.getItem("deviceToken")
-        const StringUserdata = await AsyncStorage.getItem("Userdata")
-        const Userdata = JSON.parse(StringUserdata);
-        console.log("Userdata", Userdata);
-        console.log("UserdataAddress", Userdata.address, Userdata._id);
-        console.log("SocketId", socket.id);
-        const otp = Math.floor(1000 + Math.random() * 9000);
-        console.log(`Generated OTP: ${otp}`);
-        socket.emit("FoodyOrderPlaced", { restroId, deviceToken, newSelectedFoods, newTotalItem, newTotalAmount: newTotalAmount + deliveryFee + tipAmount + platformFee, riderEarning: deliveryFee + tipAmount, newTotalRestroAmount, userDeviceToken, socketId: socket.id, userAddress: Userdata.address || '', userId: Userdata._id, otp })
-    }
+    useEffect(() => {
+        const handleOrderRejected = async (data) => {
+          try {
+            // Fetch user data from AsyncStorage
+            const StringUserdata = await AsyncStorage.getItem("Userdata");
+            const Userdata = JSON.parse(StringUserdata);
+            console.log('order rejected by restro--->', data)
+            // Check if the order is for the current user
+            if (data.userId === Userdata._id) {
+              setLoading(false);
+              setRestroRejected(true);
+            }
+          } catch (error) {
+            console.error("Error handling order rejected event: ", error);
+          }
+        };
     
-    socket.on("OrderRejectedbyRestaurant", async (data) => {
-        //when data.userId equals this users id then only execute next lines
-        setLoading(false)
-        const StringUserdata = await AsyncStorage.getItem("Userdata")
-        const Userdata = JSON.parse(StringUserdata);
-        if (data.userId === Userdata._id) {
-            console.log(data);
-            setRestroRejected(true);
-        }
-    })
-
-    if (restroRejected) {
-        return (
-            <View style={styles.restroContainer}>
-                <Text style={styles.messageText}>
-                    Sorry! The Restaurant is a little busy, it can't take your orders right now!
-                </Text>
-                <Text style={styles.subMessageText}>
-                    Order from a different Restaurant
-                </Text>
-                <LottieView
-                    source={require('../../assets/Animations/RestroRejected.json')}
-                    style={styles.lottie}
-                    autoPlay
-                    loop
-                />
-                <TouchableOpacity style={styles.resbutton} onPress={() => { props.navigation.pop(2) }}>
-                    <Text style={styles.resbuttonText}>Go Back!</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
+        // Set up the socket listener
+        socket.on("OrderRejectedbyRestaurant", handleOrderRejected);
+    
+        // Cleanup the socket listener when the component unmounts
+        return () => {
+          socket.off("OrderRejectedbyRestaurant", handleOrderRejected);
+        };
+      }, [socket]); 
 
     useEffect(() => {
         const handleOrderAccepted = async (data) => {
@@ -360,6 +319,74 @@ function FoodCart(props) {
 
     if (loading) {
         return <FoodLoader />
+    }
+
+    if (restroRejected) {
+        return (
+            <View style={styles.restroContainer}>
+                <Text style={styles.messageText}>
+                    Sorry! The Restaurant is a little busy, it can't take your orders right now!
+                </Text>
+                <Text style={styles.subMessageText}>
+                    Order from a different Restaurant
+                </Text>
+                <LottieView
+                    source={require('../../assets/Animations/RestroRejected.json')}
+                    style={styles.lottie}
+                    autoPlay
+                    loop
+                />
+                <TouchableOpacity style={styles.resbutton} onPress={() => { props.navigation.pop(2) }}>
+                    <Text style={styles.resbuttonText}>Go Back!</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    //If didn't worked then keep restroRejected at Last.
+
+    if (paymentFailure) {
+        return (
+            <View style={styles.restroContainer}>
+                <Text style={styles.messageText}>
+                OOps! Payment Unsuccessfull 
+                </Text>
+                <Text style={styles.subMessageText}>
+                    Please try again!
+                </Text>
+                <LottieView
+                    source={require('../../assets/Animations/RestroRejected.json')}
+                    style={styles.lottie}
+                    autoPlay
+                    loop
+                />
+                <TouchableOpacity style={styles.resbutton} onPress={() => { props.navigation.pop() }}>
+                    <Text style={styles.resbuttonText}>Go Back!</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    if (verifyFailure) {
+        return (
+            <View style={styles.restroContainer}>
+                <Text style={styles.messageText}>
+                    OOps! Payment Verification Failed
+                </Text>
+                <Text style={styles.subMessageText}>
+                    Something went wrong, You might have cheated us!
+                </Text>
+                <LottieView
+                    source={require('../../assets/Animations/RestroRejected.json')}
+                    style={styles.lottie}
+                    autoPlay
+                    loop
+                />
+                <TouchableOpacity style={styles.resbutton} onPress={() => { props.navigation.pop(2) }}>
+                    <Text style={styles.resbuttonText}>Go Back!</Text>
+                </TouchableOpacity>
+            </View>
+        );
     }
 
     return (
@@ -534,13 +561,13 @@ function FoodCart(props) {
                         <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {platformFee}</Text>
                     </View>
                     <View style={styles.bill}>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>GST & Restaurant Charges</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs 30</Text>
+                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>{gst}% GST & Restaurant Charges</Text>
+                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {Math.ceil((gst/100)*(newTotalAmount + tipAmount + deliveryFee + platformFee))}</Text>
                     </View>
                     <View style={{ borderBottomWidth: 1, borderBottomColor: 'black', marginTop: 10 }} />
                     <View style={styles.bill}>
                         <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>To Pay</Text>
-                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {newTotalAmount + tipAmount + deliveryFee + platformFee}</Text>
+                        <Text style={{ color: 'black', fontSize: 14, fontWeight: '700' }}>Rs {newTotalAmount + tipAmount + deliveryFee + platformFee + Math.ceil((gst/100)*(newTotalAmount + tipAmount + deliveryFee + platformFee))}</Text>
                     </View>
                 </View>
             </View>
@@ -560,7 +587,7 @@ function FoodCart(props) {
 
             <View style={{ padding: 20 }}>
                 <TouchableOpacity
-                    style={[styles.pay, razorpay ? { backgroundColor: 'lightgreen' } : null, { borderTopLeftRadius: 20, borderTopRightRadius: 20 }]}
+                    style={[styles.pay, razorpay ? { backgroundColor: 'lightgreen' } : null, { borderRadius: 20 }]}
                     onPress={() => {
                         setRazorpay(true)
                         setCod(false);
@@ -569,7 +596,7 @@ function FoodCart(props) {
                     <Text style={{ color: 'black', fontSize: 15, fontWeight: '700' }}>UPI/Credit/Debit/Net Banking</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
+                {/* <TouchableOpacity
                     style={[styles.pay, cod ? { backgroundColor: 'lightgreen' } : null, { borderBottomLeftRadius: 20, borderBottomRightRadius: 20 }]}
                     onPress={() => {
                         setCod(true);
@@ -577,12 +604,12 @@ function FoodCart(props) {
                     }}>
                     <Icon name="money-bill" size={20} color="black" />
                     <Text style={{ color: 'black', fontSize: 15, fontWeight: '700' }}>Cash On Delivery</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
 
             <View style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: '#5ecdf9' }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 }}>
-                    <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Pay Rs {newTotalAmount + tipAmount + deliveryFee + platformFee}</Text>
+                    <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Pay Rs {newTotalAmount + tipAmount + deliveryFee + platformFee + Math.ceil((gst/100)*(newTotalAmount + tipAmount + deliveryFee + platformFee))}</Text>
                     {razorpay && (
                         <TouchableOpacity
                             onPress={razorPay}
@@ -590,13 +617,13 @@ function FoodCart(props) {
                             <Text style={{ color: 'white', fontSize: 15, fontWeight: '700' }}>Pay UPI/Credit/Debit/Net Banking</Text>
                         </TouchableOpacity>
                     )}
-                   {cod && (
+                   {/* {cod && (
                         <TouchableOpacity
                             onPress={codOrderConfirm}
                             style={{ backgroundColor: 'lightgreen', padding: 15, borderRadius: 10 }}>
                             <Text style={{ color: 'white', fontSize: 15, fontWeight: '700' }}>Pay Cash On Delivery</Text>
                         </TouchableOpacity>
-                    )}
+                    )} */}
                 </View>
             </View>
 
@@ -693,7 +720,7 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     resbutton: {
-        backgroundColor: '#1e90ff', // Vibrant blue for the button
+        backgroundColor: '#68095f', // Vibrant blue for the button
         paddingVertical: 15,
         paddingHorizontal: 40,
         borderRadius: 30,

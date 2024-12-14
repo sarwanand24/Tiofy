@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     },
     popupContainer: {
         width: '80%',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#68095f',
         borderRadius: 20,
         padding: 20,
         alignItems: 'center',
@@ -46,24 +46,24 @@ const styles = StyleSheet.create({
     errorText: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#0044FF',
+        color: 'white',
         marginBottom: 15,
     },
     messageText: {
         fontSize: 18,
         textAlign: 'center',
-        color: '#0044FF',
+        color: 'white',
         marginBottom: 20,
     },
     closeButton: {
-        backgroundColor: '#0044FF',
+        backgroundColor: '#ffff00',
         borderRadius: 10,
         paddingHorizontal: 20,
         paddingVertical: 10,
         alignItems: 'center',
     },
     closeButtonText: {
-        color: '#ffffff',
+        color: 'black',
         fontSize: 18,
         fontWeight: 'bold',
     },

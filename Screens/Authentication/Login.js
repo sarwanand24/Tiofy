@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Dimensions, Image, ScrollView, StyleSheet, Text,
+import { Button, Dimensions, Image, KeyboardAvoidingView, ScrollView, StyleSheet, Text,
    TextInput, TouchableOpacity, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Loading from '../Loading';
@@ -27,6 +27,7 @@ function Login(props) {
       if (otp == code){
         await AsyncStorage.setItem("token", token);
         await AsyncStorage.setItem("Userdata", JSON.stringify(Userdata.user));
+        props.navigation.pop();
         props.navigation.replace('MainApp');
       }
       else{
@@ -54,6 +55,7 @@ function Login(props) {
   };
 
   const handleKeyPress = (index, key) => {
+    console.log('code', code)
     if (key === 'Backspace' && index > 0 && !inputs[index]) {
       inputRefs[index - 1].current.focus();
       setCode('')
@@ -65,11 +67,12 @@ function Login(props) {
   }
 
   return (
+    <KeyboardAvoidingView behavior='height'>
     <ScrollView style={{ backgroundColor: 'white' }}>
        <View style={styles.customShape}>
         <Text style={styles.loginText}>Login</Text>
       </View>
-      <Text style={[styles.text, { textAlign: 'center', marginTop: height*0.47, color: 'darkblue' }]}>Enter OTP</Text>
+      <Text style={[styles.text, { textAlign: 'center', marginTop: height*0.47, color: '#68095f' }]}>Enter OTP</Text>
       <View style={styles.container}>
         {inputs.map((_, index) => (
           <TextInput
@@ -101,6 +104,7 @@ function Login(props) {
                 onClose={() => setErrorVisible(false)}
             />
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -110,7 +114,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 10,
-    marginTop: 30
+    marginTop: 30,
   },
   customShape: {
     position: 'absolute',
@@ -118,7 +122,7 @@ const styles = StyleSheet.create({
     left: -width * 0.1, // Move it further left to push left side off-screen
     width: width * 1, // Diameter of the ball-like shape
     height: height * 0.5, // Diameter of the ball-like shape
-    backgroundColor: '#0A4BA1',
+    backgroundColor: '#68095f',
     justifyContent: 'center',
     alignItems: 'center',
     transform: [{ rotate: '-15deg' }], // Optional: rotation to create a slant effect
@@ -140,7 +144,7 @@ loginText: {
     height: 80,
     textAlign: 'center',
     fontSize: 22,
-    backgroundColor: 'darkblue',
+    backgroundColor: '#68095f',
     color: 'white'
   },
   text: {
@@ -150,7 +154,7 @@ loginText: {
   },
   button: {
     borderRadius: 20, // Make it circular by using half of the button's height
-    backgroundColor: 'darkblue', // Change the background color as needed
+    backgroundColor: '#68095f', // Change the background color as needed
     paddingHorizontal: 20,
     paddingVertical: 10,
     justifyContent: 'center',
