@@ -15,6 +15,7 @@ const CyrMapDirection = (props) => {
     destination: { lat: 0, long: 0 },
     Rider: { latitude: 0, longitude: 0, heading: 0 }
   });
+  
   const [details, setDetails] = useState([]);
   const [riderId, setRiderId] = useState('');
   const [rating, setRating] = useState(0);

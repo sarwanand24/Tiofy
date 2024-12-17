@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking } from 'react-native';
 
 const HelpSupportScreen = () => {
-  const email = "tiofy2024@gmail.com";
+  const email = "tiofybharat@gmail.com";
   const phone = "+91 7550894302";
 
   const handleEmailPress = () => Linking.openURL(`mailto:${email}`);

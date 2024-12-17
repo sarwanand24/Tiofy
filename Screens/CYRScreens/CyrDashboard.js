@@ -45,7 +45,7 @@ const CyrDashboard = (props) => {
   const [undeliveredOrders, setUndeliveredOrders] = useState([]);
   const [deliveryFeeBike, setDeliveryFeeBike] = useState(10.5);
   const [deliveryFeeCar, setDeliveryFeeCar] = useState(20.5);
-  const [deliveryFeeAuto, setDeliveryFeeAuto] = useState(15.5);
+  const [deliveryFeeToto, setDeliveryFeeToto] = useState(15.5);
   const [hiddenOrders, setHiddenOrders] = useState([]);
   const [riderSearch, setRiderSearch] = useState(false);
   const [noRidersFound, setNoRidersFound] = useState(false);
@@ -280,7 +280,7 @@ const CyrDashboard = (props) => {
 
       setDeliveryFeeBike(data2?.deliveryFeeBike || 10.5)
       setDeliveryFeeCar(data2?.deliveryFeeCar || 20.5)
-      setDeliveryFeeAuto(data2?.deliveryFeeAuto || 15.5)
+      setDeliveryFeeToto(data2?.deliveryFeeToto || 15.5)
 
       setRouteDistance(distance);
       setRouteDuration(duration);
@@ -370,7 +370,7 @@ const CyrDashboard = (props) => {
       console.log("SocketId", socket.id);
       const otp = Math.floor(1000 + Math.random() * 9000);
       console.log(`Generated OTP: ${otp}`);
-      const bill = (Math.ceil(routeDistance / 1000) * (selectedVehicleType == 'Bike' ? (deliveryFeeBike) : selectedVehicleType == 'Auto' ? (deliveryFeeAuto) : (deliveryFeeCar)));// make it autometa
+      const bill = (Math.ceil(routeDistance / 1000) * (selectedVehicleType == 'Bike' ? (deliveryFeeBike) : selectedVehicleType == 'Toto' ? (deliveryFeeToto) : (deliveryFeeCar)));// make it autometa
       socket.emit("CyrRidePlaced", { riders: filteredRiders, userDeviceToken, otp, Userdata, socketId: socket.id, bill, pickupLocation, dropLocation, selectedVehicleType })
       // Here you can proceed with the booking logic using filteredRiders
     } else {
@@ -759,7 +759,7 @@ const CyrDashboard = (props) => {
                     <View style={styles.vehicleInfo}>
                       {vehicle.vehicleType === 'Bike' ? (
                         <Image source={require('../../assets/cyrBike.png')} style={styles.markerImage} />
-                      ) : vehicle.vehicleType === 'Auto' ? (
+                      ) : vehicle.vehicleType === 'Toto' ? (
                         <Image source={require('../../assets/cyrAuto.png')} style={styles.markerImage} />
                       ) : (
                         <Image source={require('../../assets/cyrCab.png')} style={styles.markerImage} />
@@ -790,7 +790,7 @@ const CyrDashboard = (props) => {
                         { marginLeft: 10, fontSize: 16, fontWeight: '700' }
                       ]}
                     >
-                      Rs{vehicle.vehicleType == 'Bike' ? (Math.ceil(Math.ceil(routeDistance / 1000) * deliveryFeeBike)) : vehicle.vehicleType == 'Auto' ? (Math.ceil(Math.ceil(routeDistance / 1000) * deliveryFeeAuto)) : (Math.ceil(Math.ceil(routeDistance / 1000) * deliveryFeeCar))}
+                      Rs{vehicle.vehicleType == 'Bike' ? (Math.ceil(Math.ceil(routeDistance / 1000) * deliveryFeeBike)) : vehicle.vehicleType == 'Toto' ? (Math.ceil(Math.ceil(routeDistance / 1000) * deliveryFeeToto)) : (Math.ceil(Math.ceil(routeDistance / 1000) * deliveryFeeCar))}
                     </Text>
                     <Text
                           style={[
@@ -886,7 +886,7 @@ if (noRidersFound) {
             <View style={{ backgroundColor: '#f5f4f5', padding: 8, borderRadius: 20 }}>
               <Image source={require('../../assets/cyrAuto.png')} style={styles.icon} />
             </View>
-            <Text style={{ color: 'black', textAlign: 'center', fontWeight: '700' }}>Auto</Text>
+            <Text style={{ color: 'black', textAlign: 'center', fontWeight: '700' }}>Toto</Text>
           </TouchableOpacity>
         </View>
       </View>
