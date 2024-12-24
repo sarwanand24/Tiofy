@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Image, Dimensions, PermissionsAndroid, Alert } from 'react-native';
+import { View, Image, Dimensions, PermissionsAndroid, Alert, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Geolocation from 'react-native-geolocation-service';
 
@@ -70,6 +70,7 @@ function LaunchScreen(props) {
 
   return (
     <View>
+         <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
       <Image source={require('../assets/Logo/TiofyLogo.png')} style={{ width: width, height: height }} />
     </View>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image, Dimensions, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image, Dimensions, ScrollView, StatusBar } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import Icon from "react-native-vector-icons/FontAwesome6";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -59,30 +59,35 @@ const MapDirection = (props) => {
     }
   };
 
-  useEffect(() => {
-    fetchMapDetails();
+   useEffect(() => {
+    const interval = setInterval(() => {
+      fetchMapDetails();
+    }, 4000); // 5000 ms = 5 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const handleLocationUpdate = (data) => {
-      const { latitude, longitude, heading } = data;
-      console.log(latitude, longitude, heading);
-      setMapInfo(prevState => ({
-        ...prevState,
-        Rider: { latitude, longitude, heading }
-      }));
-    };
+  // useEffect(() => {
+  //   const handleLocationUpdate = (data) => {
+  //     const { latitude, longitude, heading } = data;
+  //     console.log(latitude, longitude, heading);
+  //     setMapInfo(prevState => ({
+  //       ...prevState,
+  //       Rider: { latitude, longitude, heading }
+  //     }));
+  //   };
 
-    if (hasRider) {
-      socket.on("CurrentLocationofRiderToUser", handleLocationUpdate);
-    }
+  //   if (hasRider) {
+  //     socket.on("CurrentLocationofRiderToUser", handleLocationUpdate);
+  //   }
 
-    return () => {
-      if (hasRider) {
-        socket.off("CurrentLocationofRiderToUser", handleLocationUpdate);
-      }
-    };
-  }, [socket, userId, hasRider]);
+  //   return () => {
+  //     if (hasRider) {
+  //       socket.off("CurrentLocationofRiderToUser", handleLocationUpdate);
+  //     }
+  //   };
+  // }, [socket, userId, hasRider]);
 
   const fetchRoute = async () => {
     try {
@@ -190,7 +195,7 @@ const MapDirection = (props) => {
         }}
       >
         <Marker coordinate={mapInfo.User} title="User" description="User Location">
-          <Image source={require('../../assets/person.png')} style={styles.markerImage} />
+          <Image source={require('../../assets/home.jpg')} style={styles.markerImage} />
         </Marker>
         {!hasRider && (
           <>
@@ -215,7 +220,7 @@ const MapDirection = (props) => {
               <Polyline
                 coordinates={routeCoordinates}
                 strokeColor="#68095f"
-                strokeWidth={5}
+                strokeWidth={3}
               />
             ) : !hasRider && (
               <Polyline
@@ -224,7 +229,7 @@ const MapDirection = (props) => {
                   { latitude: mapInfo.Restaurant.latitude, longitude: mapInfo.Restaurant.longitude }
                 ]}
                 strokeColor="#68095f"
-                strokeWidth={5}
+                strokeWidth={3}
                 lineDashPattern={[30, 10]}
               />
             )}
@@ -234,12 +239,9 @@ const MapDirection = (props) => {
 
       {hasRider ? (
         <View style={styles.rating}>
+          <View style={styles.bottom}>
           <Image
-            source={{
-              uri: details.Rider && details.Rider[0]?.profilePhoto
-                ? details.Rider[0].profilePhoto.replace("http://", "https://")
-                : 'https://image.api.playstation.com/vulcan/img/rnd/202010/2621/H9v5o8vP6RKkQtR77LIGrGDE.png'
-            }}
+            source={require('../../assets/riderImg.png')}
             style={styles.ratingImage} />
           <View style={styles.rateTextContainer}>
             <Text style={styles.rateRider}>{details.Rider ? `${details.Rider[0]?.riderName} is your delivery partner` : 'Fetching...'}</Text>
@@ -270,8 +272,11 @@ const MapDirection = (props) => {
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.rateRider}>{details.otp ? `Share this OTP with rider to receive your order: ${details.otp}` : 'Loading...'}</Text>
           </View>
+          </View>
+          <Text style={styles.rateRider}>
+            {details.otp ? `Share this OTP with rider to receive your order: ${details.otp}` : 'Loading...'}
+            </Text>
         </View>
       ) : (
         <View style={styles.rating}>
@@ -340,8 +345,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#68095f',
     padding: 10,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20
   },
   restaurantName: {
     fontSize: 25,
@@ -368,9 +371,8 @@ const styles = StyleSheet.create({
     color: 'white'
   },
   rating: {
-    backgroundColor: '#68095f', // Clay blue background color
-    padding: 20,               // Padding around the entire container
-    borderRadius: 10,                // Margin around the container      
+    backgroundColor: 'white', // Clay blue background color
+    padding: 20,                // Margin around the container      
   },
   ratingImage: {
     width: 60,                 // Adjust the width of the profile image
@@ -382,7 +384,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,          // Space between the rating container and the button
   },
   rateRider: {
-    color: '#FFFFFF',          // White text color
+    color: 'black',          // White text color
     fontSize: 16,              // Font size for the rider name text
     fontWeight: 'bold',        // Make the text bold
     marginBottom: 10,          // Space between the rider name and stars
@@ -391,7 +393,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',         // Space between the stars and the button
   },
   submitButton: {
-    color: '#FFFFFF',          // White text color
+    color: 'black',          // White text color
     fontSize: 16,              // Font size for the submit button
     fontWeight: 'bold',        // Make the text bold
     textAlign: 'center',       // Center-align the text
@@ -399,4 +401,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#4682b4', // Optional: Different background color for the button
     borderRadius: 5,           // Rounded corners for the button
   },
+  bottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  }
 });

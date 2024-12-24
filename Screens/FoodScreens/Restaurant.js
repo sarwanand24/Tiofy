@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dimensions, StyleSheet, Text, View, TextInput, FlatList, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { Dimensions, StyleSheet, Text, View, TextInput, FlatList, TouchableOpacity, Image, ScrollView, ActivityIndicator, StatusBar } from 'react-native';
 import Icon from "react-native-vector-icons/FontAwesome6";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FoodLoader from './FoodLoader';
@@ -29,6 +29,7 @@ function Restaurant(props) {
     const [nonveg, setNonVeg] = useState([]);
     const [fetchveg, setfetchVeg] = useState([]);
     const [fetchnonveg, setfetchNonVeg] = useState([]);
+    const [foodLoader, setFoodLoader] = useState(true)
 
     console.log("Veg Foods", vegfoods);
     console.log("Non-Veg Foods", nonvegfoods);
@@ -68,6 +69,14 @@ function Restaurant(props) {
         if (fetchnonveg?.length > 0) {
             setnonvegFoods(Array(nonveg.length).fill(0))
         }
+        if (!fetchveg?.length > 0) {
+            setActiveVeg(false);
+            setActiveNonVeg(true);
+        }
+        if (!fetchnonveg?.length > 0) {
+            setActiveNonVeg(false);
+            setActiveVeg(true);
+        }
     }, [fetchveg, fetchnonveg])
 
     useEffect(() => {
@@ -80,7 +89,7 @@ function Restaurant(props) {
                 // Example time-based pricing logic
                 const isDiscountTime = currentHour >= 0 && currentHour <= 6; // Discount from 12 AM to 6 AM
 
-                const updatedVeg = restro.vegFoods.map(food => ({
+                const updatedVeg = restro.vegFoods?.map(food => ({
                     ...food,
                     tiofyPrice: Math.ceil(
                         isDiscountTime
@@ -91,7 +100,7 @@ function Restaurant(props) {
                 setVeg(updatedVeg);
                 setfetchVeg(updatedVeg);
 
-                const updatedNonVeg = restro.nonvegFoods.map(food => ({
+                const updatedNonVeg = restro.nonvegFoods?.map(food => ({
                     ...food,
                     tiofyPrice: Math.ceil(
                         isDiscountTime
@@ -101,6 +110,7 @@ function Restaurant(props) {
                 }));
                 setNonVeg(updatedNonVeg);
                 setfetchNonVeg(updatedNonVeg)
+                setFoodLoader(false)
             } catch (error) {
                 console.log('error in checking time:', error)
             }
@@ -141,6 +151,7 @@ function Restaurant(props) {
         var amount2 = totalRestroAmount;
         amount2 += veg[index].price;
         setTotalRestroAmount(amount2);
+        console.log('restro amt---', amount2)
         setTotalItem(totalItem + 1)
     };
 
@@ -177,7 +188,7 @@ function Restaurant(props) {
             setTotalAmount(amount);
             setTotalItem(totalItem - 1)
             var amount2 = totalRestroAmount;
-            amount2 += veg[index].price;
+            amount2 -= veg[index].price;
             setTotalRestroAmount(amount2);
         }
     };
@@ -186,7 +197,7 @@ function Restaurant(props) {
         <View
             style={{ padding: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}
         >
-            <View>
+            <View style={{ width: '30%' }}>
                 <Text style={styles.foodName}>{item.name}</Text>
                 <Text style={styles.foodName}>Rs {item.tiofyPrice}</Text>
             </View>
@@ -241,8 +252,9 @@ function Restaurant(props) {
         setTotalAmount(amount);
         setTotalItem(totalItem + 1)
         var amount2 = totalRestroAmount;
-        amount2 += veg[index].price;
+        amount2 += nonveg[index].price;
         setTotalRestroAmount(amount2);
+        console.log('restro amt---', amount2)
     };
 
     const NonVegdecrementCounter = (id) => {
@@ -279,7 +291,7 @@ function Restaurant(props) {
             setTotalAmount(amount);
             setTotalItem(totalItem - 1)
             var amount2 = totalRestroAmount;
-            amount2 += veg[index].price;
+            amount2 -= nonveg[index].price;
             setTotalRestroAmount(amount2);
         }
     };
@@ -288,7 +300,7 @@ function Restaurant(props) {
         <View
             style={{ padding: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}
         >
-            <View>
+            <View style={{ width: '30%' }}>
                 <Text style={styles.foodName}>{item.name}</Text>
                 <Text style={styles.foodName}>Rs {item.tiofyPrice}</Text>
             </View>
@@ -338,7 +350,7 @@ function Restaurant(props) {
             distance: distanceInKm,
             duration: durationInMins
         };
-
+        console.log('Cart data------------->', cartData)
         try {
             await AsyncStorage.setItem('cartData', JSON.stringify(cartData));
             props.navigation.push("FoodCart", cartData);
@@ -401,107 +413,141 @@ function Restaurant(props) {
                     <Icon name="magnifying-glass" size={24} color="black" style={styles.searchicon} />
                 </View>
 
-                <View style={styles.menu}>
-                    <TouchableOpacity
-                        style={[styles.menuBtn, activeVeg ? { backgroundColor: 'lightgreen' } : { backgroundColor: '#5ecdf9' }]}
-                        onPress={() => {
-                            setActiveVeg(true);
-                            setActiveNonVeg(false);
-                        }}>
-                        <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Veg</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.menuBtn, activeNonVeg ? { backgroundColor: 'lightgreen' } : { backgroundColor: '#5ecdf9' }]}
-                        onPress={() => {
-                            setActiveNonVeg(true);
-                            setActiveVeg(false);
-                        }}>
-                        <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Non-Veg</Text>
-                    </TouchableOpacity>
-                </View>
+                {foodLoader ? (
+                    <View style={{ padding: 20 }}>
+                    <ActivityIndicator size={40} color='black' />
+                   </View>
+                ) : (
+                     <>
+                     <View style={styles.menu}>
+                         {veg?.length > 0 && nonveg?.length > 0 ? (
+                             <>
+                                 <TouchableOpacity
+                                     style={[styles.menuBtn, activeVeg ? { backgroundColor: 'lightgreen' } : { backgroundColor: '#5ecdf9' }]}
+                                     onPress={() => {
+                                         setActiveVeg(true);
+                                         setActiveNonVeg(false);
+                                     }}>
+                                     <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Veg</Text>
+                                 </TouchableOpacity>
+                                 <TouchableOpacity
+                                     style={[styles.menuBtn, activeNonVeg ? { backgroundColor: 'lightgreen' } : { backgroundColor: '#5ecdf9' }]}
+                                     onPress={() => {
+                                         setActiveNonVeg(true);
+                                         setActiveVeg(false);
+                                     }}>
+                                     <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Non-Veg</Text>
+                                 </TouchableOpacity>
+                             </>
+                         ) : nonveg?.length > 0 ? (
+                             <TouchableOpacity
+                                 style={[styles.menuBtn, activeNonVeg ? { backgroundColor: 'lightgreen' } : { backgroundColor: '#5ecdf9' }]}
+                                 onPress={() => {
+                                     setActiveNonVeg(true);
+                                     setActiveVeg(false);
+                                 }}>
+                                 <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Non-Veg</Text>
+                             </TouchableOpacity>
+                         ) : veg?.length > 0 ? (
+                             <TouchableOpacity
+                                 style={[styles.menuBtn, activeVeg ? { backgroundColor: 'lightgreen' } : { backgroundColor: '#5ecdf9' }]}
+                                 onPress={() => {
+                                     setActiveVeg(true);
+                                     setActiveNonVeg(false);
+                                 }}>
+                                 <Text style={{ color: 'black', fontSize: 18, fontWeight: '700' }}>Veg</Text>
+                             </TouchableOpacity>
+                         ) : (
+                             <View style={{padding:20}}>
+                                 <Text style={{color:'black'}}>No food items available.</Text>
+                             </View>
+                         )}
+                     </View>
 
-                <View style={{ marginBottom: 10 }}>
-                    {veg?.length > 0 && activeVeg && (
-                        <FlatList
-                            data={veg}
-                            renderItem={VegfoodItems}
-                            bounces={false}
-                            keyExtractor={(item, index) => index.toString()}
-                            style={{ marginTop: 10 }}
-                        />
-                    )}
-                    {nonveg?.length > 0 && activeNonVeg && (
-                        <FlatList
-                            data={nonveg}
-                            renderItem={NonVegfoodItems}
-                            bounces={false}
-                            keyExtractor={(item, index) => index.toString()}
-                            style={{ marginTop: 10 }}
-                        />
-                    )}
-                </View>
+                     <View style={{ marginBottom: 10 }}>
+                         {veg?.length > 0 && activeVeg && (
+                             <FlatList
+                                 data={veg}
+                                 renderItem={VegfoodItems}
+                                 bounces={false}
+                                 keyExtractor={(item, index) => index.toString()}
+                                 style={{ marginTop: 10 }}
+                             />
+                         )}
+                         {nonveg?.length > 0 && activeNonVeg && (
+                             <FlatList
+                                 data={nonveg}
+                                 renderItem={NonVegfoodItems}
+                                 bounces={false}
+                                 keyExtractor={(item, index) => index.toString()}
+                                 style={{ marginTop: 10 }}
+                             />
+                         )}
+                     </View>
+                 </>
+                )}
 
-                <View style={[styles.detailsContainer2, {marginBottom: height/3}]}>
-      <Text style={styles.detailsHeader}>Additional Restaurant Information</Text>
+                <View style={[styles.detailsContainer2, { marginBottom: height / 3 }]}>
+                    <Text style={styles.detailsHeader}>Additional Restaurant Information</Text>
 
-      <View style={styles.detailItem}>
-        <Icon name="check-circle" size={24} color="#5BC0EB" />
-        <Text style={styles.detailText}>All prices are directly set by the restaurants to ensure fairness.</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="check-circle" size={24} color="#5BC0EB" />
+                        <Text style={styles.detailText}>All prices are directly set by the restaurants to ensure fairness.</Text>
+                    </View>
 
-      <View style={styles.detailItem}>
-        <Icon name="utensils" size={24} color="#FDE74C" />
-        <Text style={styles.detailText}>Our food quality is top-notch, prepared with the freshest ingredients every day.</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="utensils" size={24} color="#FDE74C" />
+                        <Text style={styles.detailText}>Our food quality is top-notch, prepared with the freshest ingredients every day.</Text>
+                    </View>
 
-      <View style={styles.detailItem}>
-        <Icon name="truck" size={24} color="#9BC53D" />
-        <Text style={styles.detailText}>Delivery times are estimated and may vary depending on location and traffic.</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="truck" size={24} color="#9BC53D" />
+                        <Text style={styles.detailText}>Delivery times are estimated and may vary depending on location and traffic.</Text>
+                    </View>
 
-      <View style={styles.detailItem}>
-        <Icon name="thumbs-up" size={24} color="#FF1654" />
-        <Text style={styles.detailText}>We value your feedback, and your satisfaction is our priority!</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="thumbs-up" size={24} color="#FF1654" />
+                        <Text style={styles.detailText}>We value your feedback, and your satisfaction is our priority!</Text>
+                    </View>
 
-      <View style={styles.detailItem}>
-        <Icon name="info-circle" size={24} color="#E55934" />
-        <Text style={styles.detailText}>Note: Prices are subject to change without prior notice.</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="info-circle" size={24} color="#E55934" />
+                        <Text style={styles.detailText}>Note: Prices are subject to change without prior notice.</Text>
+                    </View>
 
-      <View style={styles.detailItem}>
-        <Icon name="star" size={24} color="#FA7921" />
-        <Text style={styles.detailText}>Each restaurant maintains hygiene standards to ensure safe and healthy meals.</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="star" size={24} color="#FA7921" />
+                        <Text style={styles.detailText}>Each restaurant maintains hygiene standards to ensure safe and healthy meals.</Text>
+                    </View>
 
-      <View style={styles.detailItem}>
-        <Icon name="balance-scale" size={24} color="#17BEBB" />
-        <Text style={styles.detailText}>We adhere to all legal compliances and food safety regulations.</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="balance-scale" size={24} color="#17BEBB" />
+                        <Text style={styles.detailText}>We adhere to all legal compliances and food safety regulations.</Text>
+                    </View>
 
-      <Text style={styles.subHeader}>Restaurant Legal Information</Text>
+                    <Text style={styles.subHeader}>Restaurant Legal Information</Text>
 
-      <View style={styles.detailItem}>
-        <Icon name="certificate" size={24} color="#F76C6C" />
-        <Text style={styles.detailText}>FSSAI No.: {restro.fssaiNo}</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="certificate" size={24} color="#F76C6C" />
+                        <Text style={styles.detailText}>FSSAI No.: {restro.fssaiNo}</Text>
+                    </View>
 
-      <View style={styles.detailItem}>
-        <Icon name="calendar-alt" size={24} color="#26A69A" />
-        <Text style={styles.detailText}>FSSAI Expiry Date: {restro.fssaiExpiryDate}</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="calendar-alt" size={24} color="#26A69A" />
+                        <Text style={styles.detailText}>FSSAI Expiry Date: {restro.fssaiExpiryDate}</Text>
+                    </View>
 
-      <View style={styles.detailItem}>
-        <Icon name="clock" size={24} color="#FFC107" />
-        <Text style={styles.detailText}>Opening Time: {restro.openingTime}| Closing Time: {restro.closingTime}</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="clock" size={24} color="#FFC107" />
+                        <Text style={styles.detailText}>Opening Time: {restro.openingTime}| Closing Time: {restro.closingTime}</Text>
+                    </View>
 
-      <View style={styles.detailItem}>
-        <Icon name="user-tie" size={24} color="#3D9970" />
-        <Text style={styles.detailText}>Owner: {restro.ownerName}</Text>
-      </View>
+                    <View style={styles.detailItem}>
+                        <Icon name="user-tie" size={24} color="#3D9970" />
+                        <Text style={styles.detailText}>Owner: {restro.ownerName}</Text>
+                    </View>
 
-      <Text style={styles.wittyText}>P.S. Food so good, you'll want to leave us a review. But don’t forget to eat first! 🍽️😋</Text>
+                    <Text style={styles.wittyText}>P.S. Food so good, you'll want to leave us a review. But don’t forget to eat first! 🍽️😋</Text>
                 </View>
 
             </ScrollView>
@@ -571,7 +617,7 @@ const styles = StyleSheet.create({
     foodName: {
         color: 'black',
         fontSize: 18,
-        fontWeight: '700'
+        fontWeight: '700',
     },
     itemIncDec: {
         padding: 10,
@@ -609,37 +655,37 @@ const styles = StyleSheet.create({
         padding: 16,
         backgroundColor: '#F0F4F8',
         borderRadius: 8,
-      },
-      detailsHeader: {
+    },
+    detailsHeader: {
         fontSize: 24,
         color: '#5BC0EB',
         fontWeight: 'bold',
         marginBottom: 12,
-      },
-      subHeader: {
+    },
+    subHeader: {
         fontSize: 20,
         color: '#5BC0EB',
         fontWeight: 'bold',
         marginVertical: 12,
-      },
-      detailItem: {
+    },
+    detailItem: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 8,
-      },
-      detailText: {
+    },
+    detailText: {
         fontSize: 16,
         color: '#333333',
         marginLeft: 10,
         flex: 1,
-      },
-      wittyText: {
+    },
+    wittyText: {
         fontSize: 16,
         color: '#E91E63',
         marginTop: 20,
         fontStyle: 'italic',
         textAlign: 'center',
-      },
+    },
 })
 
 export default Restaurant

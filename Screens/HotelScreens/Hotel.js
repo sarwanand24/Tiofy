@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, FlatList, Image, Dimensions, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, FlatList, Image, Dimensions, StyleSheet, TouchableOpacity, StatusBar } from 'react-native'
 import HotelLoader from './HotelLoader';
 
 const { width, height } = Dimensions.get("window");
@@ -146,6 +146,7 @@ function Hotel(props) {
 
     return (
         <View style={{ flex: 1, padding: 15, marginBottom: 30, backgroundColor:'#68095f' }}>
+               <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
             <Text style={{ fontSize: 20, color: '#ffff00', fontWeight: '800', textAlign: 'center', padding: 10 }}>{city}</Text>
             {state.msg && (
                 <View>

@@ -4,6 +4,7 @@ import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import Icon from "react-native-vector-icons/FontAwesome6";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import polyline from '@mapbox/polyline';
+import Geolocation from 'react-native-geolocation-service';
 
 const { width, height } = Dimensions.get('window');
 
@@ -65,26 +66,87 @@ const CyrMapDirection = (props) => {
     fetchMapDetails();
   }, []);
 
+  const fetchLiveUpdates = async () => {
+    try {
+      const response = await fetch(
+        `https://trioserver.onrender.com/api/v1/cyrOrder/order/${orderId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (data.data) {
+        const orderData = data.data;
+        const destination = orderData.toLocation || { lat: 0, long: 0 };
+        const riderLatLng = orderData.Rider[0] || { lat: 0, long: 0 };
+
+        // Get user's current location
+        Geolocation.getCurrentPosition(
+          (position) => {
+            const userLat = position.coords.latitude;
+            const userLong = position.coords.longitude;
+
+            setMapInfo((prev) => ({
+              ...prev,
+              User: {
+                lat: userLat,
+                long: userLong,
+              },
+              destination: {
+                lat: destination.lat,
+                long: destination.long,
+              },
+              Rider: {
+                latitude: riderLatLng.latitude,
+                longitude: riderLatLng.longitude,
+                heading: 0, // Default heading
+              },
+            }));
+          },
+          (error) => {
+            console.error("Error getting current location: ", error);
+          }
+        );
+      }
+    } catch (error) {
+      console.log("Error in fetching live updates", error);
+      alert("Error in fetching live updates: " + error.message);
+    }
+  };
+
   useEffect(() => {
-    const handleLocationUpdate = (data) => {
-      const { latitude, longitude, heading } = data;
-      console.log(latitude, longitude, heading);
-      setMapInfo(prevState => ({
-        ...prevState,
-        Rider: { latitude, longitude, heading }
-      }));
-    };
+    const interval = setInterval(() => {
+      fetchLiveUpdates(); // Periodic updates every 4 seconds
+    }, 4000);
 
-      socket.on("CurrentLocationofRiderToUser", handleLocationUpdate);
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, []);
 
-    return () => {
-        socket.off("CurrentLocationofRiderToUser", handleLocationUpdate);
-    };
-  }, [socket, userId]);
+  // useEffect(() => {
+  //   const handleLocationUpdate = (data) => {
+  //     const { latitude, longitude, heading } = data;
+  //     console.log(latitude, longitude, heading);
+  //     setMapInfo(prevState => ({
+  //       ...prevState,
+  //       Rider: { latitude, longitude, heading }
+  //     }));
+  //   };
+
+  //     socket.on("CurrentLocationofRiderToUser", handleLocationUpdate);
+
+  //   return () => {
+  //       socket.off("CurrentLocationofRiderToUser", handleLocationUpdate);
+  //   };
+  // }, [socket, userId]);
 
   const fetchRoute = async () => {
     try {
-      const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${mapInfo.Rider.longitude},${mapInfo.Rider.latitude};${mapInfo.destination.long},${mapInfo.destination.lat}?overview=full`);
+      const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${mapInfo.User.long},${mapInfo.User.lat};${mapInfo.destination.long},${mapInfo.destination.lat}?overview=full`);
       const data = await response.json();
       const encodedPolyline = data.routes[0].geometry;
       const distance = data.routes[0].distance;
@@ -176,13 +238,15 @@ const CyrMapDirection = (props) => {
               }
             ]} />
         </Marker>
-        <Marker
+      {details?.rideStatus == 'Rider is on the way' && (
+          <Marker
           coordinate={{ latitude: mapInfo.User.lat, longitude: mapInfo.User.long }}
           title={'PickupLocation'}
           description={'Location of the user'}
         >
           <Image source={require('../../assets/person.png')} style={styles.markerImage} />
         </Marker>
+      )}
         <Marker
           coordinate={{ latitude: mapInfo.destination.lat, longitude: mapInfo.destination.long }}
           title={'User'}
@@ -194,19 +258,27 @@ const CyrMapDirection = (props) => {
           <Polyline
             coordinates={routeCoordinates}
             strokeColor="#68095f"
-            strokeWidth={5}
+            strokeWidth={3}
           />
         )}
       </MapView>
 
         <View style={styles.rating}>
+       <View style={styles.bottom}>
+        {details.Rider && details.Rider[0]?.profilePhoto ? (
+ <Image
+ source={{
+   uri: details.Rider && details.Rider[0]?.profilePhoto
+     ? details.Rider[0].profilePhoto.replace("http://", "https://")
+     : 'null'
+ }}
+ style={styles.ratingImage} />
+        ) : (
           <Image
-            source={{
-              uri: details.Rider && details.Rider[0]?.profilePhoto
-                ? details.Rider[0].profilePhoto.replace("http://", "https://")
-                : 'https://image.api.playstation.com/vulcan/img/rnd/202010/2621/H9v5o8vP6RKkQtR77LIGrGDE.png'
-            }}
-            style={styles.ratingImage} />
+          source={require('../../assets/riderImg.png')}
+          style={styles.ratingImage} />
+        )}
+      
           <View style={styles.rateTextContainer}>
             <Text style={styles.rateRider}>{details.Rider ? `${details.Rider[0]?.riderName} is your captain` : 'Fetching...'}</Text>
             <View style={{ flexDirection: 'row' }}>
@@ -236,8 +308,11 @@ const CyrMapDirection = (props) => {
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.rateRider}>{details.otp ? `Share this OTP with rider to begin your journey: ${details.otp}` : 'Loading...'}</Text>
           </View>
+       </View>
+       <Text style={styles.rateRider}>
+        {details.otp ? `Share this OTP with rider to begin your journey: ${details.otp}` : 'Loading...'}
+        </Text>
         </View>
     </ScrollView>
   );
@@ -265,8 +340,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#68095f',
     padding: 10,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20
   },
   restaurantName: {
     fontSize: 25,
@@ -293,9 +366,8 @@ const styles = StyleSheet.create({
     color: 'white'
   },
   rating: {
-    backgroundColor: '#68095f', // Clay blue background color
-    padding: 20,               // Padding around the entire container
-    borderRadius: 10,                // Margin around the container      
+    backgroundColor: 'white', // Clay blue background color
+    padding: 20,                    // Margin around the container      
   },
   ratingImage: {
     width: 60,                 // Adjust the width of the profile image
@@ -307,7 +379,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,          // Space between the rating container and the button
   },
   rateRider: {
-    color: '#FFFFFF',          // White text color
+    color: 'black',          // White text color
     fontSize: 16,              // Font size for the rider name text
     fontWeight: 'bold',        // Make the text bold
     marginBottom: 10,          // Space between the rider name and stars
@@ -316,7 +388,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',         // Space between the stars and the button
   },
   submitButton: {
-    color: '#FFFFFF',          // White text color
+    color: 'black',          // White text color
     fontSize: 16,              // Font size for the submit button
     fontWeight: 'bold',        // Make the text bold
     textAlign: 'center',       // Center-align the text
@@ -324,4 +396,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#4682b4', // Optional: Different background color for the button
     borderRadius: 5,           // Rounded corners for the button
   },
+  bottom: {
+    flexDirection:'row',
+    justifyContent: 'space-evenly'
+  }
 });

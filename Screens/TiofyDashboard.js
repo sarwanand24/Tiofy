@@ -211,8 +211,8 @@ useEffect(() => {
 
   const categories = [
     { name: 'Food', image: require('../assets/Food.png'), route: 'FoodDashboard' },
-    { name: 'Hotel', image: require('../assets/Hotel.png'), route: 'HotelDashboard' },
     { name: 'Auto&Cab', image: require('../assets/cab.png'), route: 'CyrDashboard' },
+    { name: 'Hotel', image: require('../assets/Hotel.png'), route: 'HotelDashboard' },
     { name: 'Liquor', image: require('../assets/liquor.png'), route: 'LiquorDashboard' },
   ];
 
@@ -225,7 +225,7 @@ useEffect(() => {
 
   return (
       <View style={{ flex: 1, backgroundColor: '#68095f' }}>
-        <StatusBar color={'transparent'} />
+         <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
         <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header with Logo and Menu */}
         <View style={styles.header}>

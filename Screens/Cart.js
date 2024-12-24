@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
@@ -29,6 +29,7 @@ const Cart = (props) => {
 
   return (
     <View style={styles.container}>
+         <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
       {cartData ? (
         <ScrollView>
           <Text style={styles.title}>Cart Details</Text>

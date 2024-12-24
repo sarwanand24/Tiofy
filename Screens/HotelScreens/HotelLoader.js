@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    StatusBar,
     StyleSheet,
     View,
 } from 'react-native';
@@ -9,6 +10,7 @@ const HotelLoader = () => {
 
     return (
         <View style={styles.loading}>
+               <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
            <LottieView source={require('../../assets/Animations/HotelLoader.json')}
            style={styles.lottie} autoPlay loop />
         </View>

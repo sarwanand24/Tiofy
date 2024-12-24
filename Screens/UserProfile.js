@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput,
-     Alert, Modal } from 'react-native';
+     Alert, Modal, StatusBar } from 'react-native';
 import { getAccessToken } from '../utils/auth';
 import axios from 'axios';
 
@@ -103,6 +103,7 @@ const InfoRow = ({ label, value }) => (
 
     return (
         <ScrollView style={styles.container}>
+               <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
             {/* Profile Section */}
             <View style={styles.profileContainer}>
                 <Image

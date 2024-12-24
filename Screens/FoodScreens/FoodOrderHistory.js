@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, StatusBar } from 'react-native';
 import axios from 'axios';
 import { getAccessToken } from '../../utils/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';

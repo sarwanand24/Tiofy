@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, StatusBar } from 'react-native';
 import axios from 'axios';
 
 const HotelRatingSummary = ({ hotelId }) => {  // Pass hotelId as a prop
@@ -38,6 +38,7 @@ const HotelRatingSummary = ({ hotelId }) => {  // Pass hotelId as a prop
 
   return (
     <View style={styles.container}>
+         <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
       <Text style={styles.title}>Hotel Ratings</Text>
       {groupedRatings.length > 0 ? (
         <FlatList

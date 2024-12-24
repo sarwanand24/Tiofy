@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking, Alert } from 'react-native';
+import { Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking, Alert, StatusBar } from 'react-native';
 import Icon from "react-native-vector-icons/FontAwesome6";
 import CalendarPicker from 'react-native-calendar-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -491,6 +491,7 @@ const formatTime = (hour) => {
 
     return (
         <ScrollView style={{flex:1, backgroundColor:'#68095f'}}>
+               <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
             <View>
                 <Image source={{ uri: hotel.hotelPhoto }} style={{ widht: width, height: height / 2.3 }} />
             </View>

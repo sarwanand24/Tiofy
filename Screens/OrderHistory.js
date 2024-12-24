@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 
 const OrderHistory = (props) => {
   return (
     <View style={styles.container}>
+         <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
       <Text style={styles.title}>Order History</Text>
       <TouchableOpacity
         style={styles.button}

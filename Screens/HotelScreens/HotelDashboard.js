@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
     Dimensions, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
     Image,
-    ImageBackground
+    ImageBackground,
+    StatusBar
 } from 'react-native';
 import Icon from "react-native-vector-icons/FontAwesome6";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -195,6 +196,7 @@ function HotelDashboard(props) {
 
     return (
         <ScrollView style={{ backgroundColor: '#68095f' }}>
+               <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
             <View style={{ height: height / 2 }}>
                 {festiveImg && (
                     <Image

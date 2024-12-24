@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 import { getAccessToken } from '../../utils/auth';
@@ -87,6 +87,7 @@ const HotelOrderHistory = () => {
 
     return (
       <View style={styles.bookingContainer}>
+           <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
         <Text style={styles.bookingText}>BookingId: {item._id}</Text>
         <Text style={styles.bookingText}>Hotel: {item.hotel?.hotelName}</Text>
         <Text style={styles.bookingText}>Total Bill: Rs {item.bill}</Text>

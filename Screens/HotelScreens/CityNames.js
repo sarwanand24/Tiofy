@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import HotelLoader from './HotelLoader';
-import { FlatList, TouchableOpacity, View, Text, StyleSheet, TextInput } from 'react-native';
+import { FlatList, TouchableOpacity, View, Text, StyleSheet, TextInput, StatusBar } from 'react-native';
 
 function CityNames(props) {
     const { flatStay, coupleStay, familyStay } = props.route.params;
@@ -111,6 +111,7 @@ function CityNames(props) {
 
     return (
         <View style={{ flex: 1, padding: 10, backgroundColor: '#68095f' }}>
+               <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
             <Text style={styles.h1}>{h1}</Text>
             {/* Search Bar */}
             <TextInput

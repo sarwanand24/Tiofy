@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, PermissionsAndroid, TextInput, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView, Animated, Easing, Dimensions } from 'react-native';
+import { View, Text, PermissionsAndroid, TextInput, StyleSheet, TouchableOpacity, FlatList, Image, ScrollView, Animated, Easing, Dimensions, StatusBar } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -643,6 +643,7 @@ const FoodDashboard = (props) => {
             scrollEventThrottle={16}
             stickyHeaderIndices={[0]}
         >
+               <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
             <View>
                 <Animated.View style={[styles.headerContainer, { height: headerHeightAnim, backgroundColor: headerBackgroundColor }]}>
                     <View style={styles.locationContainer}>

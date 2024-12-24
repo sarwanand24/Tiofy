@@ -738,7 +738,7 @@ const CyrDashboard = (props) => {
                     <Polyline
                       coordinates={routeCoordinates}
                       strokeColor="#68095f"
-                      strokeWidth={5}
+                      strokeWidth={3}
                     />
                   )}
                 </>
@@ -760,7 +760,7 @@ const CyrDashboard = (props) => {
                       {vehicle.vehicleType === 'Bike' ? (
                         <Image source={require('../../assets/cyrBike.png')} style={styles.markerImage} />
                       ) : vehicle.vehicleType === 'Toto' ? (
-                        <Image source={require('../../assets/cyrAuto.png')} style={styles.markerImage} />
+                        <Image source={require('../../assets/cyrToto.jpeg')} style={styles.markerImage} />
                       ) : (
                         <Image source={require('../../assets/cyrCab.png')} style={styles.markerImage} />
                       )}
@@ -884,7 +884,7 @@ if (noRidersFound) {
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setManualEntry(true)}>
             <View style={{ backgroundColor: '#f5f4f5', padding: 8, borderRadius: 20 }}>
-              <Image source={require('../../assets/cyrAuto.png')} style={styles.icon} />
+              <Image source={require('../../assets/cyrToto.jpeg')} style={styles.icon} />
             </View>
             <Text style={{ color: 'black', textAlign: 'center', fontWeight: '700' }}>Toto</Text>
           </TouchableOpacity>

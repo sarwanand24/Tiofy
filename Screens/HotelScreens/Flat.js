@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, FlatList, Image, StyleSheet, Dimensions } from 'react-native'
+import { View, Text, FlatList, Image, StyleSheet, Dimensions, StatusBar } from 'react-native'
 import HotelLoader from './HotelLoader';
 
 const { width, height } = Dimensions.get("window");
@@ -65,6 +65,7 @@ function Flat(props) {
 
     return (
         <View style={{ padding: 15, marginBottom: 30 }}>
+               <StatusBar color={'transparent'} backgroundColor={'#68095f'} />
             <Text style={{ fontSize: 20, color: 'black', fontWeight: '800', textAlign: 'center', padding: 10 }}>{city}</Text>
             <FlatList
                 data={allFlats}

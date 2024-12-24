@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Text, Image, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Text, Image, Alert, StatusBar } from 'react-native';
 import Icon from "react-native-vector-icons/FontAwesome6";
 import socket from '../../utils/Socket';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -33,6 +33,7 @@ function FoodCart(props) {
     const [restroRejected, setRestroRejected] = useState(false);
     const [restroAccepted, setRestroAccepted] = useState(false);
     const [loading, setLoading] = useState(false)
+    const [confirmation, setConfirmation] = useState(false)
     const [deliveryFee, setDeliveryFee] = useState(Math.ceil(distance*10.5));
     const [platformFee, setPlatformFee] = useState(15);
     const [paymentFailure, setPaymentFailure] = useState(false);
@@ -93,7 +94,7 @@ function FoodCart(props) {
             amount -= selectedFoods[index].sellPrice;
             setNewTotalAmount(amount);
             var amount2 = newTotalRestroAmount;
-            amount2 += selectedFoods[index].restroPrice;
+            amount2 -= selectedFoods[index].restroPrice;
             setNewTotalRestroAmount(amount2);
             setNewTotalItem(newTotalItem - 1)
         }
@@ -126,8 +127,8 @@ function FoodCart(props) {
     }, [distance]);
 
     const verifyPayment = async (paymentData) => {
-        setLoading(true)
         try {
+            setConfirmation(true)
           const response = await fetch('https://trioserver.onrender.com/api/v1/payments/verifyPayment', {
             method: 'POST',
             headers: {
@@ -151,7 +152,10 @@ function FoodCart(props) {
             const otp = Math.floor(1000 + Math.random() * 9000);
             console.log(`Generated OTP: ${otp}`);
             socket.emit("FoodyOrderPlaced", { restroId, deviceToken, newSelectedFoods, newTotalItem, newTotalAmount: newTotalAmount + deliveryFee + tipAmount + platformFee + Math.ceil((gst/100)*(newTotalAmount + tipAmount + deliveryFee + platformFee)), riderEarning: deliveryFee + tipAmount, newTotalRestroAmount, userDeviceToken, socketId: socket.id, userAddress: Userdata.address || '', userId: Userdata._id, otp })
-          } else {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            props.navigation.pop(2);
+            props.navigation.replace('FoodDashboard');
+        } else {
             setVerifyFailure(true)
             await new Promise((resolve) => setTimeout(resolve, 3000));
             setVerifyFailure(false)
@@ -262,64 +266,73 @@ function FoodCart(props) {
         };
       }, [socket]); 
 
-    useEffect(() => {
-        const handleOrderAccepted = async (data) => {
-          try {
-            // Fetch user data from AsyncStorage
-            const StringUserdata = await AsyncStorage.getItem("Userdata");
-            const Userdata = JSON.parse(StringUserdata);
+    // useEffect(() => {
+    //     const handleOrderAccepted = async (data) => {
+    //       try {
+    //         // Fetch user data from AsyncStorage
+    //         const StringUserdata = await AsyncStorage.getItem("Userdata");
+    //         const Userdata = JSON.parse(StringUserdata);
     
-            // Check if the order is for the current user
-            if (data.data.userId === Userdata._id) {
-              setLoading(false);
-              setRestroAccepted(true);
+    //         // Check if the order is for the current user
+    //         if (data.data.userId === Userdata._id) {
+    //           setLoading(false);
+    //           setRestroAccepted(true);
     
-              // Wait for 3 seconds before navigating
-              await new Promise((resolve) => setTimeout(resolve, 3000));
+    //           // Wait for 3 seconds before navigating
+    //           await new Promise((resolve) => setTimeout(resolve, 3000));
               
-              // Navigate to the MapDirection screen
-              props.navigation.push("MapDirection", { 
-                orderId: data.orderId, 
-                socket, 
-                userId: Userdata._id 
-              });
-            }
-          } catch (error) {
-            console.error("Error handling order accepted event: ", error);
-          }
-        };
+    //           // Navigate to the MapDirection screen
+    //           props.navigation.push("MapDirection", { 
+    //             orderId: data.orderId, 
+    //             socket, 
+    //             userId: Userdata._id 
+    //           });
+    //         }
+    //       } catch (error) {
+    //         console.error("Error handling order accepted event: ", error);
+    //       }
+    //     };
     
-        // Set up the socket listener
-        socket.on("OrderAcceptedbyRestaurant", handleOrderAccepted);
+    //     // Set up the socket listener
+    //     socket.on("OrderAcceptedbyRestaurant", handleOrderAccepted);
     
-        // Cleanup the socket listener when the component unmounts
-        return () => {
-          socket.off("OrderAcceptedbyRestaurant", handleOrderAccepted);
-        };
-      }, [socket]); 
+    //     // Cleanup the socket listener when the component unmounts
+    //     return () => {
+    //       socket.off("OrderAcceptedbyRestaurant", handleOrderAccepted);
+    //     };
+    //   }, [socket]); 
 
-    if (restroAccepted) {
-        return (
-            <View style={styles.container3}>
-                <Text style={styles.mainMessage}>
-                    Order Accepted
-                </Text>
-                <Text style={styles.subMessage}>
-                    Searching For Your Delivery Partner
-                </Text>
-                <LottieView
-                    source={require('../../assets/Animations/RiderSearch.json')}
-                    style={styles.lottie2}
-                    autoPlay
-                    loop
-                />
-            </View>
-        );
-    }
+    // if (restroAccepted) {
+    //     return (
+    //         <View style={styles.container3}>
+    //             <Text style={styles.mainMessage}>
+    //                 Order Accepted
+    //             </Text>
+    //             <Text style={styles.subMessage}>
+    //                 Searching For Your Delivery Partner
+    //             </Text>
+    //             <LottieView
+    //                 source={require('../../assets/Animations/RiderSearch.json')}
+    //                 style={styles.lottie2}
+    //                 autoPlay
+    //                 loop
+    //             />
+    //         </View>
+    //     );
+    // }
 
     if (loading) {
         return <FoodLoader />
     }
+
+     if(confirmation){
+           return (
+            <View style={styles.loading}>
+               <LottieView source={require('../../assets/Animations/confirmation.json')}
+               style={styles.lottie3} autoPlay loop />
+            </View>
+           )
+        }
 
     if (restroRejected) {
         return (
@@ -614,7 +627,7 @@ function FoodCart(props) {
                         <TouchableOpacity
                             onPress={razorPay}
                             style={{ backgroundColor: 'lightgreen', padding: 15, borderRadius: 10 }}>
-                            <Text style={{ color: 'white', fontSize: 15, fontWeight: '700' }}>Pay UPI/Credit/Debit/Net Banking</Text>
+                            <Text style={{ color: 'white', fontSize: 15, fontWeight: '700' }}>Pay Online</Text>
                         </TouchableOpacity>
                     )}
                    {/* {cod && (
@@ -760,6 +773,16 @@ const styles = StyleSheet.create({
         width: width * 0.7, // Large enough to be noticeable but not overwhelming
         height: height * 0.4, // Adjust height to maintain aspect ratio
     },
+    loading: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#68095f'
+    },
+    lottie3: {
+        width: '100%',
+        height: '100%',
+      }
 })
 
 export default FoodCart
