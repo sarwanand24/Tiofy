@@ -13,48 +13,48 @@ This documentation provides a detailed overview of the Tiofy ecosystem, covering
 
 ## 📚 Table of Contents
 1. [What is Tiofy?](#-what-is-tiofy)
-2. [Tiofy User Application](#tiofy-user-application)
-   - [Splash Screen](#splash-screen)
-   - [Home Screen](#home-screen)
-     - [Categories Overview](#categories-overview)
-     - [Discounts and Offers](#discounts-and-offers)
-   - [Order History](#order-history)
-   - [Cart](#cart)
-   - [Account](#account)
-     - [Profile](#profile)
-     - [Help & Support](#help--support)
-     - [Logout](#logout)
-   - [Food Ordering Workflow](#food-ordering-workflow)
-   - [Cab Booking Workflow](#cab-booking-workflow)
-   - [Hotel Booking Workflow](#hotel-booking-workflow)
-3. [Tiofy Restaurant Application](#tiofy-restaurant-application)
-     - [Bottom Navbar Overview](#bottom-navbar-overview)
-     - [Home Screen](#home-screen)
-       - [Online/Offline Toggle](#onlineoffline-toggle)
-       - [Order History](#order-history)
-       - [Cancelled Orders](#cancelled-orders)
-     - [Earnings Screen](#earnings-screen)
-       - [Daily Earnings](#daily-earnings)
-       - [Weekly Earnings](#weekly-earnings)
-     - [Notifications Screen](#notifications-screen)
-     - [Account Screen](#account-screen)
-       - [Profile](#profile)
-       - [Help & Support](#help--support)
-       - [Logout](#logout)
-4. [Tiofy Rider Application](#tiofy-rider-application)
-  - [Bottom Navbar Overview](#bottom-navbar-overview)
-     - [Home Screen](#home-screen)
+2. [Tiofy User Application](#-tiofy-user-application)
+   - [Splash Screen](#-splash-screen)
+   - [Home Screen](#-home-screen)
+     - [Categories Overview](#-categories-overview)
+     - [Discounts and Offers](#-discounts-and-offers)
+   - [Order History](#-order-history)
+   - [Cart](#-cart)
+   - [Account](#-account)
+     - [Profile](#-profile)
+     - [Help & Support](#-help--support)
+     - [Logout](#-logout)
+   - [Food Ordering Workflow](#-food-ordering-workflow)
+   - [Cab Booking Workflow](#-cab-booking-workflow)
+   - [Hotel Booking Workflow](#-hotel-booking-workflow)
+3. [Tiofy Restaurant Application](#-tiofy-restaurant-application)
+     - [Bottom Navbar Overview](#-bottom-navbar-overview)
+     - [Home Screen](#-home-screen)
+       - [Online/Offline Toggle](#-onlineoffline-toggle)
+       - [Order History](#-order-history)
+       - [Cancelled Orders](#-cancelled-orders)
+     - [Earnings Screen](#-earnings-screen)
+       - [Daily Earnings](#-daily-earnings)
+       - [Weekly Earnings](#-weekly-earnings)
+     - [Notifications Screen](#-notifications-screen)
+     - [Account Screen](#-account-screen)
+       - [Profile](#-profile)
+       - [Help & Support](#-help--support)
+       - [Logout](#-logout)
+4. [Tiofy Rider Application](#-tiofy-rider-application)
+  - [Bottom Navbar Overview](#-bottom-navbar-overview)
+     - [Home Screen](#-home-screen)
        - [Available Orders](#available-orders)
        - [Accepted Orders](#accepted-orders)
-     - [Earnings Screen](#earnings-screen)
+     - [Earnings Screen](#-earnings-screen)
        - [Daily Earnings](#daily-earnings)
        - [Weekly Earnings](#weekly-earnings)
-     - [Notifications Screen](#notifications-screen)
-     - [Account Screen](#account-screen)
+     - [Notifications Screen](#-notifications-screen)
+     - [Account Screen](#-account-screen)
        - [Profile](#profile)
        - [Help & Support](#help--support)
        - [Logout](#logout)
-5. [Hotel Booking Website](#hotel-booking-website)
+5. [Hotel Booking Website](#-hotel-booking-website)
 
 ---
 
@@ -64,6 +64,8 @@ This documentation provides a detailed overview of the Tiofy ecosystem, covering
 - A **food delivery service** connecting users to their favorite restaurants.  
 - A **ride booking service** offering cabs, bikes, and autos.  
 - A **hotel reservation system** for daily and hourly stays.
+
+And that’s just the beginning! 🚀 We’re gearing up to add even more services, like liquor delivery, laundry pickup, and much more, making Tiofy your ultimate go-to app for every need.
 
 Tiofy provides user-friendly interfaces for its customers, restaurants, riders, and hotel managers, making the entire ecosystem seamless and efficient.
 
@@ -104,15 +106,17 @@ Track orders for all three categories:
 - Cab Booking  
 - Hotel Reservations  
 
-**Screenshot:** 
+**Screenshots:** 
 <img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737704247/Tiofy/yserzhhwnqddw1z1cu5r.jpg" alt="Order History" width="200" />
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737728669/WhatsApp_Image_2025-01-24_at_7.50.01_PM_yrrl5m.jpg" alt="Food" width="200" />
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737728669/WhatsApp_Image_2025-01-24_at_7.50.02_PM_m97ogm.jpg" alt="AutoCab" width="200" />
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737728669/WhatsApp_Image_2025-01-24_at_7.49.58_PM_sngesr.jpg" alt="Hotel" width="200" />
 
 ---
 
 ### 🛒 Cart
 Available only for **Food Delivery**, the cart allows users to:  
-- View selected items.  
-- Adjust quantities.  
+- View selected items. 
 - Proceed to checkout.
 
 **Screenshot:**  
@@ -150,7 +154,7 @@ graph TD
     C --> D[Select Dishes]
     D --> E[Add to Cart]
     E --> F[Payment & Checkout]
-    F --> G[Track Order]
+    F --> G[Track Order in food dashboard]
 ```
 
 **Screenshots:**  
@@ -215,6 +219,8 @@ graph TD
 
 The **Tiofy Restaurant Application** is tailored for restaurant owners, enabling them to manage orders, monitor earnings, and oversee restaurant activity effectively.
 
+*Because running a restaurant is tough, but managing it shouldn't be harder than perfecting your secret recipe! 🍲😄*
+
 ---
 
 ### 🔍 Bottom Navbar Overview
@@ -237,6 +243,8 @@ The Tiofy Restaurant app's bottom navbar contains the following options:
 
 ### 🏠 Home Screen
 
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733096/WhatsApp_Image_2025-01-24_at_9.00.48_PM_1_hdriab.jpg" alt="Restro Dashboard" width="200" />
+
 The **Home Screen** is the primary interface for restaurant owners. It includes the following features:
 
 #### 🌐 Online/Offline Toggle
@@ -252,11 +260,15 @@ The **Home Screen** is the primary interface for restaurant owners. It includes 
   - Customer name and contact.
   - Order items and quantities.
   - Total bill amount.
+ 
+  <img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733097/WhatsApp_Image_2025-01-24_at_9.00.47_PM_1_jxisv9.jpg" alt="Order History" width="200" />
 
 #### ❌ Cancelled Orders
 
 - A separate section lists cancelled orders along with reasons (e.g., user cancellation, unavailability).  
 - This helps restaurant owners analyze cancellations and improve operations.
+
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733096/WhatsApp_Image_2025-01-24_at_9.00.48_PM_xjdp6x.jpg" alt="Cancelled Orders" width="200" />
 
 [Back to Top](#📚-table-of-contents)
 
@@ -265,6 +277,10 @@ The **Home Screen** is the primary interface for restaurant owners. It includes 
 ### 💵 Earnings Screen
 
 The **Earnings Screen** provides a financial overview for restaurant owners:
+
+**Screenshots:**
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733097/WhatsApp_Image_2025-01-24_at_9.00.47_PM_nfeagk.jpg" alt="Daily Earning" width="200" />
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733097/WhatsApp_Image_2025-01-24_at_9.00.46_PM_jeigyj.jpg" alt="Weekly Earning" width="200" />
 
 #### 📅 Daily Earnings
 
@@ -293,6 +309,8 @@ The **Account Screen** allows restaurant owners to manage their profile and acce
 
 #### 📝 Profile
 
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733098/WhatsApp_Image_2025-01-24_at_9.00.45_PM_ssvjxh.jpg" alt="Profile" width="200" />
+
 - Update restaurant details such as:
   - Name
   - Logo
@@ -310,21 +328,10 @@ The **Account Screen** allows restaurant owners to manage their profile and acce
 
 ### 📽️ Visual Demo of Tiofy Restaurant App
 
-#### Home Screen Overview:
-
-[Insert Video Link or Embedded Player Here]
-
-#### Earnings Workflow:
-
-[Insert Video Link or Embedded Player Here]
-
-#### Notifications Overview:
-
-[Insert Video Link or Embedded Player Here]
-
-#### Account Management Workflow:
-
-[Insert Video Link or Embedded Player Here]
+<a href="https://www.youtube.com/shorts/UnImaVOGaXY">
+  <img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737704250/Tiofy/gkrz8mdgm0jfdqptytla.jpg" alt="Watch Demo" width="100" />
+</a> 
+*Click above to watch demo of Tiofy Restaurant Application*
 
 ---
 
@@ -344,6 +351,8 @@ F --> G[Add to Earnings]
 
 The **Tiofy Rider Application** is designed for delivery riders and cab drivers to manage orders, track earnings, and stay updated with notifications.
 
+*Because who needs dating apps when you can swipe right on orders and earn all night? 😉*
+
 ---
 
 ### 🔍 Bottom Navbar Overview
@@ -351,7 +360,7 @@ The **Tiofy Rider Application** is designed for delivery riders and cab drivers 
 The Tiofy Rider app's bottom navbar contains the following options:
 
 1. **Home**  
-   Manage available and accepted orders.
+   Manage available and accepted orders. Also for looking peak order zones from top restaurants and high volume cab/bike/toto booking area.
 
 2. **Earnings**  
    View daily and weekly earnings.
@@ -365,6 +374,8 @@ The Tiofy Rider app's bottom navbar contains the following options:
 ---
 
 ### 🏠 Home Screen
+
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733874/WhatsApp_Image_2025-01-24_at_9.19.11_PM_du7nfp.jpg" alt="Rider Dashboard" width="200" />
 
 The **Home Screen** is the central hub for riders. It includes:
 
@@ -382,12 +393,49 @@ The **Home Screen** is the central hub for riders. It includes:
   - Navigation to the pickup and drop-off locations.
   - Real-time status updates (e.g., Picked Up, Delivered).
   - Options to mark orders as **Completed** or **Cancelled**.
+ 
+#### 📋 Peak Order Zones
+
+**Screenshots:**
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733904/WhatsApp_Image_2025-01-24_at_9.19.09_PM_cjy96d.jpg" alt="Peak Order Zone1" width="200" />
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733913/WhatsApp_Image_2025-01-24_at_9.19.08_PM_nxmpis.jpg" alt="Peak Order Zone2" width="200" />
+
+The Peak Order Zone feature helps riders maximize their earnings by highlighting high-demand areas. Here's how it works:
+
+##### For Food Delivery Riders:
+
+- 📍 Restaurant Hotspots:
+    - A list of restaurants experiencing high order volumes.
+    - Details include restaurant name, address, and live order count.
+    - Riders can plan routes to these hotspots to secure more delivery orders.
+ 
+- 🕒 Dynamic Updates:
+    - The list updates in real-time, ensuring riders are always directed to the most profitable locations.
+ 
+- 💰 Boosted Earnings:
+    - Orders from peak zones often come with higher delivery fees during busy hours.
+ 
+##### For Cab/Bike/Toto Drivers:
+
+- 📍 High-Demand Booking Areas:
+    - Displays a list of locations with high cab or bike booking requests.
+    - Includes precise addresses, estimated demand, and surge pricing info (if applicable).
+ 
+- 🚦 Efficient Navigation:
+    - Directs drivers to busy zones to reduce idle time and increase trip frequency.
+ 
+- 🕒 Time-Sensitive Data:
+    - Shows demand peaks during rush hours, events, or weekends to optimize earnings.
 
 [Back to Top](#📚-table-of-contents)
 
 ---
 
 ### 💵 Earnings Screen
+
+**Screenshots:**
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733870/WhatsApp_Image_2025-01-24_at_9.19.10_PM_urlinx.jpg" alt="Earning1" width="200" />
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733863/WhatsApp_Image_2025-01-24_at_9.19.10_PM_1_partdq.jpg" alt="Earning2" width="200" />
 
 The **Earnings Screen** provides a detailed financial overview for riders:
 
@@ -418,6 +466,8 @@ The **Account Screen** allows riders to manage their profile and access tools:
 
 #### 📝 Profile
 
+<img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737733857/WhatsApp_Image_2025-01-24_at_9.19.11_PM_1_axr12j.jpg" alt="Profile" width="200" />
+
 - Update personal details such as:
   - Name
   - Vehicle type
@@ -435,25 +485,10 @@ The **Account Screen** allows riders to manage their profile and access tools:
 
 ### 📽️ Visual Demo of Tiofy Rider App
 
-#### Home Screen Overview:
-
-[Insert Video Link or Embedded Player Here]
-
-#### Accepting and Delivering Orders:
-
-[Insert Video Link or Embedded Player Here]
-
-#### Earnings Overview:
-
-[Insert Video Link or Embedded Player Here]
-
-#### Notifications Overview:
-
-[Insert Video Link or Embedded Player Here]
-
-#### Account Management Workflow:
-
-[Insert Video Link or Embedded Player Here]
+<a href="https://www.youtube.com/shorts/AAWRsFdvWx0">
+  <img src="https://res.cloudinary.com/dlusrj69w/image/upload/v1737704250/Tiofy/gkrz8mdgm0jfdqptytla.jpg" alt="Watch Demo" width="100" />
+</a> 
+*Click above to watch demo of Tiofy Rider Application*
 
 ---
 
