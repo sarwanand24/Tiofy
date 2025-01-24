@@ -3,14 +3,16 @@
 **Tiofy** is a one-stop platform for all your needs, offering:  
 - 🍔 **Food Delivery**  
 - 🚖 **Cab Booking**  
-- 🏨 **Hotel Reservations**  
+- 🏨 **Hotel Reservations**
+  
+*Because why juggle apps when you can have it all in one? Your cravings, rides, and stays—sorted!*
 
 This documentation provides a detailed overview of the Tiofy ecosystem, covering its Android applications and website. Navigate through each section using the links below:
 
 ---
 
 ## 📚 Table of Contents
-1. [What is Tiofy?](#what-is-tiofy)
+1. [What is Tiofy?](#-what-is-tiofy)
 2. [Tiofy User Application](#tiofy-user-application)
    - [Splash Screen](#splash-screen)
    - [Home Screen](#home-screen)
